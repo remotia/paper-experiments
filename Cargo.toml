@@ -12,12 +12,7 @@ features = ["rt-multi-thread"]
 [dependencies]
 env_logger = "0.9.0"
 log = "0.4.14"
-remotia = { path = "../remotia/" }   
-remotia-buffer-utils = { path = "../remotia-buffer-utils/" }   
-remotia-profilation-utils = { path = "../remotia-profilation-utils/" }   
-remotia-core-capturers = { path = "../remotia-core-capturers/" }   
-remotia-ffmpeg-codecs = { path = "../remotia-ffmpeg-codecs/" }   
-remotia-srt = { path = "../remotia-srt/" }   
-remotia-core-renderers = { path = "../remotia-core-renderers/" }   
-remotia-core-loggers = { path = "../remotia-core-loggers/" }   
-remotia-core-codecs = { path = "../remotia-core-codecs/" }   
+
+remotia = { git = "https://github.com/remotia/remotia", branch = "master" }
+remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "master" }
+remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master" }

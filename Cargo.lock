@@ -1118,13 +1118,7 @@ dependencies = [
  "env_logger 0.9.0",
  "log",
  "remotia",
- "remotia-buffer-utils",
- "remotia-core-capturers",
- "remotia-core-codecs",
- "remotia-core-loggers",
- "remotia-core-renderers",
  "remotia-ffmpeg-codecs",
- "remotia-profilation-utils",
  "remotia-srt",
  "tokio",
 ]
@@ -1374,24 +1368,33 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 [[package]]
 name = "remotia"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
+ "remotia-buffer-utils",
  "remotia-core",
+ "remotia-core-capturers",
+ "remotia-core-codecs",
+ "remotia-core-loggers",
+ "remotia-core-renderers",
+ "remotia-profilation-utils",
 ]
 
 [[package]]
 name = "remotia-buffer-utils"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
  "async-trait",
  "bytes",
  "log",
- "remotia",
+ "remotia-core",
  "tokio",
 ]
 
 [[package]]
 name = "remotia-core"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
  "async-trait",
  "bincode",
@@ -1418,43 +1421,47 @@ dependencies = [
 [[package]]
 name = "remotia-core-capturers"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
  "async-trait",
  "bytes",
  "env_logger 0.9.0",
  "log",
- "remotia",
+ "remotia-core",
  "scrap",
 ]
 
 [[package]]
 name = "remotia-core-codecs"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
  "async-trait",
  "bytes",
  "env_logger 0.9.0",
  "log",
  "rayon",
- "remotia",
+ "remotia-core",
  "tokio",
 ]
 
 [[package]]
 name = "remotia-core-loggers"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
  "async-trait",
  "bytes",
  "csv",
  "env_logger 0.9.0",
  "log",
- "remotia",
+ "remotia-core",
 ]
 
 [[package]]
 name = "remotia-core-renderers"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
  "async-trait",
  "beryllium",
@@ -1462,13 +1469,14 @@ dependencies = [
  "env_logger 0.9.0",
  "log",
  "pixels",
- "remotia",
+ "remotia-core",
  "zstring",
 ]
 
 [[package]]
 name = "remotia-ffmpeg-codecs"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia-ffmpeg-codecs?branch=master#08d9380564125858197db0a6933ed570441e8782"
 dependencies = [
  "async-trait",
  "bincode",
@@ -1484,15 +1492,17 @@ dependencies = [
 [[package]]
 name = "remotia-profilation-utils"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia?branch=master#c99b40ef5826187d57c28a4f922fb6ee7c975321"
 dependencies = [
  "async-trait",
  "bytes",
- "remotia",
+ "remotia-core",
 ]
 
 [[package]]
 name = "remotia-srt"
 version = "0.1.0"
+source = "git+https://github.com/remotia/remotia-srt?branch=master#6fadfd0dae17d1b2f08ecda82c5141c6e9c4e629"
 dependencies = [
  "async-trait",
  "bincode",
