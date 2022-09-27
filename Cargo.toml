@@ -13,6 +13,10 @@ features = ["rt-multi-thread"]
 env_logger = "0.9.0"
 log = "0.4.14"
 
-remotia = { git = "https://github.com/remotia/remotia", branch = "master" }
-remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "master" }
+# remotia = { git = "https://github.com/remotia/remotia", branch = "develop" }
+remotia = { path = "../remotia/" }
+
+# remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "master" }
+remotia-ffmpeg-codecs = { path = "../remotia-ffmpeg-codecs/" }
+
 remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master" }
