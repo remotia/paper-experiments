@@ -22,5 +22,5 @@ remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master
 
 [dependencies.remotia]
 path = "../remotia/"
-features = ["capturers", "buffer_utils", "renderers"]
+features = ["capturers", "buffer_utils", "renderers", "profilation_utils"]
 

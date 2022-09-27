@@ -1,5 +1,5 @@
 use log::debug;
-use remotia::{traits::FrameProcessor, processors::functional::Function};
+use remotia::{processors::functional::Function, traits::FrameProcessor};
 
 pub fn printer() -> impl FrameProcessor {
     Function::new(|frame_data| {
@@ -7,5 +7,19 @@ pub fn printer() -> impl FrameProcessor {
         debug!("Buffers: {:?}", frame_data.get_writable_buffers_keys());
 
         Some(frame_data)
+    })
+}
+
+pub fn void_dropper() -> impl FrameProcessor {
+    Function::new(|frame_data| {
+        if frame_data.get_drop_reason().is_some() {
+            debug!(
+                "Dropping frame because of {:?}",
+                frame_data.get_drop_reason().unwrap()
+            );
+            None
+        } else {
+            Some(frame_data)
+        }
     })
 }
