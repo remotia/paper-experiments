@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use log::debug;
-use paper_experiments::utils::{printer, void_dropper};
+use paper_experiments::utils::{void_dropper};
 use remotia::processors::frame_drop::threshold::ThresholdBasedFrameDropper;
 use remotia::time::add::TimestampAdder;
 use remotia::time::diff::TimestampDiffCalculator;
@@ -13,6 +15,37 @@ use remotia::{
 };
 use scrap::{Capturer, Display};
 
+struct PipelineRegistry {
+    pipelines: HashMap<String, AscodePipeline>
+}
+
+impl PipelineRegistry {
+    pub fn new() -> Self {
+        Self {
+            pipelines: HashMap::new()
+        }
+    }
+
+    pub fn register_empty(&mut self, id: &str) {
+        self.pipelines.insert(id.to_string(), AscodePipeline::new());
+    }
+
+    pub fn register(&mut self, id: &str, pipeline: AscodePipeline) {
+        self.pipelines.insert(id.to_string(), pipeline);
+    }
+
+    pub async fn run(mut self) {
+        let mut handles = Vec::new();
+        for (_, pipeline) in self.pipelines.drain() {
+            handles.extend(pipeline.run());
+        }
+
+        for handle in handles {
+            handle.await.unwrap()
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
@@ -24,12 +57,10 @@ async fn main() -> std::io::Result<()> {
         .link(Component::new().append(renderer(&mut registry)))
         .bind();
 
-    let mut handles = Vec::new();
-    handles.extend(pipeline.run());
+    let mut pipeline_registry = PipelineRegistry::new();
+    pipeline_registry.register("main", pipeline);
 
-    for handle in handles {
-        handle.await.unwrap()
-    }
+    pipeline_registry.run().await;
 
     Ok(())
 }
