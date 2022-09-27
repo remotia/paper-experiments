@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-
 use log::debug;
-use paper_experiments::utils::{printer, void_dropper};
+use paper_experiments::pipeline_registry::PipelineRegistry;
+use paper_experiments::register;
+use paper_experiments::utils::printer;
 use remotia::processors::error_switch::OnErrorSwitch;
 use remotia::processors::frame_drop::threshold::ThresholdBasedFrameDropper;
 use remotia::time::add::TimestampAdder;
@@ -15,45 +15,6 @@ use remotia::{
     scrap::ScrapFrameCapturer,
 };
 use scrap::{Capturer, Display};
-
-struct PipelineRegistry {
-    pipelines: HashMap<String, AscodePipeline>,
-}
-
-impl PipelineRegistry {
-    pub fn new() -> Self {
-        Self {
-            pipelines: HashMap::new(),
-        }
-    }
-
-    pub fn register_empty(&mut self, id: &str) {
-        self.pipelines.insert(id.to_string(), AscodePipeline::new());
-    }
-
-    pub fn register(&mut self, id: &str, pipeline: AscodePipeline) {
-        self.pipelines.insert(id.to_string(), pipeline);
-    }
-
-    pub fn get_mut(&mut self, id: &str) -> &mut AscodePipeline {
-        self.pipelines.get_mut(id).unwrap()
-    }
-
-    pub fn get(&self, id: &str) -> &AscodePipeline {
-        self.pipelines.get(id).unwrap()
-    }
-
-    pub async fn run(mut self) {
-        let mut handles = Vec::new();
-        for (_, pipeline) in self.pipelines.drain() {
-            handles.extend(pipeline.bind().run());
-        }
-
-        for handle in handles {
-            handle.await.unwrap()
-        }
-    }
-}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -69,19 +30,25 @@ async fn main() -> std::io::Result<()> {
 
     let mut pipelines = PipelineRegistry::new();
 
-    let error_pipeline = AscodePipeline::new()
+    register!(
+        pipelines,
+        "error",
+        AscodePipeline::new()
         .link(
             Component::new()
                 .append(pools.mass_redeemer(true))
                 .append(printer()),
         )
-        .feedable();
-    pipelines.register("error", error_pipeline);
+        .feedable()
+    );
 
-    let main_pipeline = AscodePipeline::new()
-        .link(Component::new().append(capturer(&mut pools)))
-        .link(Component::new().append(renderer(&mut pools, &pipelines)));
-    pipelines.register("main", main_pipeline);
+    register!(
+        pipelines,
+        "main",
+        AscodePipeline::new()
+            .link(Component::new().append(capturer(&mut pools, 2)))
+            .link(Component::new().append(renderer(&mut pools, &pipelines)))
+    );
 
     pipelines.run().await;
 
@@ -100,10 +67,10 @@ fn renderer(registry: &mut PoolRegistry, pipelines: &PipelineRegistry) -> impl F
         .append(registry.get("raw_frame_buffer").redeemer())
 }
 
-fn capturer(pools: &mut PoolRegistry) -> impl FrameProcessor {
+fn capturer(pools: &mut PoolRegistry, display_id: usize) -> impl FrameProcessor {
     let mut displays = Display::all().unwrap();
     debug!("Displays: {:?}", displays.len());
-    let display = displays.remove(2);
+    let display = displays.remove(display_id);
 
     let capturer = ScrapFrameCapturer::new(Capturer::new(display).unwrap());
 
