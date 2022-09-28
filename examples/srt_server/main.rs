@@ -3,6 +3,7 @@ use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
 use paper_experiments::utils::printer;
 use paper_experiments::yuv_to_rgba::YUV420PToRGBAConverter;
+use remotia::csv::serializer::CSVFrameDataSerializer;
 use remotia::processors::error_switch::OnErrorSwitch;
 use remotia::processors::frame_drop::threshold::ThresholdBasedFrameDropper;
 use remotia::time::add::TimestampAdder;
@@ -55,11 +56,20 @@ async fn main() -> std::io::Result<()> {
             .link(Component::singleton(encoder(&mut pools, &mut pipelines)))
             .link(Component::singleton(decoder(&mut pools, &mut pipelines)))
             .link(Component::singleton(renderer(&mut pools, &mut pipelines)))
+            .link(Component::singleton(logger()))
     );
 
     pipelines.run().await;
 
     Ok(())
+}
+
+
+fn logger() -> impl FrameProcessor {
+    CSVFrameDataSerializer::new("stats.csv")
+        .log("capture_timestamp")
+        .log("capture_idle_time")
+        .log("capture_processing_time")
 }
 
 fn encoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
@@ -94,6 +104,18 @@ fn renderer(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl 
         .append(pools.get("raw_frame_buffer").redeemer())
 }
 
+macro_rules! time_start {
+    ($id: expr) => {
+        TimestampAdder::new(&format!("{}_start", $id))
+    };
+}
+
+macro_rules! time_diff {
+    ($id: expr) => {
+        TimestampDiffCalculator::new(&format!("{}_start", $id), &format!("{}_time", $id))
+    };
+}
+
 fn capturer(pools: &mut PoolRegistry, display_id: usize) -> impl FrameProcessor {
     let mut displays = Display::all().unwrap();
     debug!("Displays: {:?}", displays.len());
@@ -103,7 +125,13 @@ fn capturer(pools: &mut PoolRegistry, display_id: usize) -> impl FrameProcessor 
 
     Sequential::new()
         .append(Ticker::new(30))
+
+        .append(time_start!("capture_idle"))
         .append(pools.get("raw_frame_buffer").borrower())
+        .append(time_diff!("capture_idle"))
+
+        .append(time_start!("capture_processing"))
         .append(TimestampAdder::new("capture_timestamp"))
         .append(capturer)
+        .append(time_diff!("capture_processing"))
 }
