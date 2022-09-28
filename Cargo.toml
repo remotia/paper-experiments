@@ -10,6 +10,7 @@ version = "1.14.0"
 features = ["rt-multi-thread"]
 
 [dependencies]
+async-trait = "0.1.57"
 scrap = "0.5.0"
 env_logger = "0.9.0"
 log = "0.4.14"
@@ -22,5 +23,5 @@ remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master
 
 [dependencies.remotia]
 path = "../remotia/"
-features = ["capturers", "buffer_utils", "renderers", "profilation_utils"]
+features = ["capturers", "buffer_utils", "renderers", "profilation_utils", "codecs"]
 

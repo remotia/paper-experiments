@@ -32,7 +32,7 @@ impl PipelineRegistry {
     pub async fn run(mut self) {
         let mut handles = Vec::new();
         for (_, pipeline) in self.pipelines.drain() {
-            handles.extend(pipeline.bind().run());
+            handles.extend(pipeline.run());
         }
 
         for handle in handles {
