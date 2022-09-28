@@ -33,8 +33,7 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "error",
-        AscodePipeline::new()
-        .link(
+        AscodePipeline::singleton(
             Component::new()
                 .append(pools.mass_redeemer(true))
                 .append(printer()),
@@ -46,8 +45,8 @@ async fn main() -> std::io::Result<()> {
         pipelines,
         "main",
         AscodePipeline::new()
-            .link(Component::new().append(capturer(&mut pools, 2)))
-            .link(Component::new().append(renderer(&mut pools, &pipelines)))
+            .link(Component::singleton(capturer(&mut pools, 2)))
+            .link(Component::singleton(renderer(&mut pools, &pipelines)))
     );
 
     pipelines.run().await;
