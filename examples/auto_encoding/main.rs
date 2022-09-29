@@ -15,6 +15,7 @@ use remotia::frame_dump::RawFrameDumper;
 use remotia::processors::error_switch::OnErrorSwitch;
 use remotia::processors::frame_drop::threshold::ThresholdBasedFrameDropper;
 use remotia::processors::functional::Function;
+use remotia::processors::switch::Switch;
 use remotia::time::add::TimestampAdder;
 use remotia::time::diff::TimestampDiffCalculator;
 use remotia::traits::FrameProcessor;
@@ -62,16 +63,26 @@ async fn main() -> std::io::Result<()> {
 
     register!(
         pipelines,
-        "main",
-        AscodePipeline::new().link(
+        "decoding",
+        AscodePipeline::new().feedable().link(
             Component::new()
-                .append(capturer(&mut pools, display_id))
-                .append(encoder(&mut pools, &mut pipelines))
                 .append(decoder(&mut pools, &mut pipelines))
                 .append(renderer(&mut pools, &mut pipelines))
                 .append(logger())
         )
     );
+
+    register!(
+        pipelines,
+        "encoding",
+        AscodePipeline::new().link(
+            Component::new()
+                .append(capturer(&mut pools, display_id))
+                .append(encoder(&mut pools, &mut pipelines))
+                .append(Switch::new(pipelines.get_mut("decoding")))
+        )
+    );
+
 
     pipelines.run().await;
 
