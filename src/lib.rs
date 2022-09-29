@@ -1,3 +1,4 @@
+pub mod common;
 pub mod utils;
 
 // TODO: To be moved
