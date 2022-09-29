@@ -119,6 +119,8 @@ fn encoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl F
     let width = 1280;
     let height = 720;
 
+    let encoder = X264Encoder::new(width as i32, height as i32, "keyint=16");
+
     Sequential::new()
         .append(TimestampDiffCalculator::new(
             "capture_timestamp",
@@ -134,15 +136,11 @@ fn encoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl F
         .append(RGBAToYUV420PConverter::new())
         .append(pools.get("raw_frame_buffer").redeemer())
         .append(pools.get("encoded_frame_buffer").borrower())
-        .append(X264Encoder::new(
-            width * height * 4,
-            width as i32,
-            height as i32,
-            "keyint=16",
-        ))
+        .append(encoder.pusher())
         .append(pools.get("y_channel_buffer").redeemer())
         .append(pools.get("cb_channel_buffer").redeemer())
         .append(pools.get("cr_channel_buffer").redeemer())
+        .append(encoder.puller())
         .append(time_diff!("encode_processing"))
 }
 
