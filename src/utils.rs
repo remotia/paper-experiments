@@ -1,7 +1,6 @@
 use log::debug;
 use remotia::{
-    frame_dump::RawFrameDumper,
-    processors::{containers::sequential::Sequential, functional::Function},
+    processors::{functional::Function},
     traits::FrameProcessor,
 };
 

@@ -17,9 +17,10 @@ log = "0.4.14"
 
 # remotia = { git = "https://github.com/remotia/remotia", branch = "develop" }
 # remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "master" }
+# remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master" }
 
 remotia-ffmpeg-codecs = { path = "../remotia-ffmpeg-codecs/" }
-remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master" }
+remotia-srt = { path = "../remotia-srt/" }
 
 [dependencies.remotia]
 path = "../remotia/"
