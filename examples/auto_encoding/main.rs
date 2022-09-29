@@ -71,15 +71,29 @@ async fn main() -> std::io::Result<()> {
 }
 
 fn logger() -> impl FrameProcessor {
-    CSVFrameDataSerializer::new("stats.csv")
-        .log("capture_timestamp")
-        .log("capture_idle_time")
-        .log("capture_processing_time")
-        .log("encode_idle_time")
-        .log("encode_processing_time")
-        .log("decode_idle_time")
-        .log("decode_processing_time")
-        .log("render_processing_time")
+    Sequential::new()
+        .append(
+            CSVFrameDataSerializer::new("stats/idle.csv")
+                .log("capture_timestamp")
+                .log("capture_idle_time")
+                .log("encode_idle_time")
+                .log("decode_idle_time"),
+        )
+        .append(
+            CSVFrameDataSerializer::new("stats/processing.csv")
+                .log("capture_timestamp")
+                .log("capture_processing_time")
+                .log("encode_processing_time")
+                .log("decode_processing_time")
+                .log("render_processing_time"),
+        )
+        .append(
+            CSVFrameDataSerializer::new("stats/delay.csv")
+                .log("capture_timestamp")
+                .log("encode_delay")
+                .log("decode_delay")
+                .log("frame_delay"),
+        )
 }
 
 fn capturer(pools: &mut PoolRegistry, display_id: usize) -> impl FrameProcessor {
@@ -116,7 +130,6 @@ fn encoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl F
         .append(pools.get("cr_channel_buffer").borrower())
         .append(OnErrorSwitch::new(pipelines.get_mut("error")))
         .append(time_diff!("encode_idle"))
-
         .append(time_start!("encode_processing"))
         .append(RGBAToYUV420PConverter::new())
         .append(pools.get("raw_frame_buffer").redeemer())
@@ -139,12 +152,10 @@ fn decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl F
             "capture_timestamp",
             "decode_delay",
         ))
-
         .append(time_start!("decode_idle"))
         .append(pools.get("raw_frame_buffer").borrower())
         .append(OnErrorSwitch::new(pipelines.get_mut("error")))
         .append(time_diff!("decode_idle"))
-
         .append(time_start!("decode_processing"))
         .append(pools.get("y_channel_buffer").borrower())
         .append(pools.get("cb_channel_buffer").borrower())
