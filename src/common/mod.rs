@@ -43,8 +43,8 @@ pub fn capturer(pools: &mut PoolRegistry, display_id: usize) -> impl FrameProces
 
 pub fn encoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
     // TODO: Make these configurable
-    let width = 1280;
-    let height = 720;
+    let width = 640;
+    let height = 480;
 
     let encoder = X264Encoder::new(width as i32, height as i32, "keyint=16");
 
@@ -105,7 +105,7 @@ pub fn renderer(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> i
         .append(ThresholdBasedFrameDropper::new("frame_delay", 20000))
         .append(OnErrorSwitch::new(pipelines.get_mut("error")))
         .append(time_start!("render_processing"))
-        .append(BerylliumRenderer::new(1280, 720))
+        .append(BerylliumRenderer::new(640, 480))
         .append(pools.get("raw_frame_buffer").redeemer())
         .append(time_diff!("render_processing"))
 }
