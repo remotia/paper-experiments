@@ -1563,7 +1563,7 @@ dependencies = [
  "cstr",
  "env_logger",
  "log",
- "remotia 0.1.0 (git+https://github.com/remotia/remotia?branch=master)",
+ "remotia 0.1.0",
  "rsmpeg",
  "tokio",
 ]
