@@ -1,4 +1,8 @@
+use std::path::PathBuf;
+
 use log::debug;
+use paper_experiments::dumper;
+use paper_experiments::panicker::Panicker;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
 use paper_experiments::time_diff;
@@ -7,8 +11,10 @@ use paper_experiments::utils::printer;
 
 use paper_experiments::yuv_to_rgba::YUV420PToRGBAConverter;
 use remotia::csv::serializer::CSVFrameDataSerializer;
+use remotia::frame_dump::RawFrameDumper;
 use remotia::processors::error_switch::OnErrorSwitch;
 use remotia::processors::frame_drop::threshold::ThresholdBasedFrameDropper;
+use remotia::processors::functional::Function;
 use remotia::time::add::TimestampAdder;
 use remotia::time::diff::TimestampDiffCalculator;
 use remotia::traits::FrameProcessor;
@@ -57,12 +63,14 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "main",
-        AscodePipeline::new()
-            .link(Component::singleton(capturer(&mut pools, display_id)))
-            .link(Component::singleton(encoder(&mut pools, &mut pipelines)))
-            .link(Component::singleton(decoder(&mut pools, &mut pipelines)))
-            .link(Component::singleton(renderer(&mut pools, &mut pipelines)))
-            .link(Component::singleton(logger()))
+        AscodePipeline::new().link(
+            Component::new()
+                .append(capturer(&mut pools, display_id))
+                .append(encoder(&mut pools, &mut pipelines))
+                .append(decoder(&mut pools, &mut pipelines))
+                .append(renderer(&mut pools, &mut pipelines))
+                .append(logger())
+        )
     );
 
     pipelines.run().await;
@@ -101,17 +109,17 @@ fn capturer(pools: &mut PoolRegistry, display_id: usize) -> impl FrameProcessor 
     debug!("Displays: {:?}", displays.len());
     let display = displays.remove(display_id);
 
-    let capturer = ScrapFrameCapturer::new(Capturer::new(display).unwrap());
-
     Sequential::new()
-        .append(Ticker::new(1000))
+        .append(Panicker::new(5))
+        .append(Ticker::new(500))
         .append(time_start!("capture_idle"))
         .append(pools.get("raw_frame_buffer").borrower())
         .append(time_diff!("capture_idle"))
         .append(time_start!("capture_processing"))
         .append(TimestampAdder::new("capture_timestamp"))
-        .append(capturer)
+        .append(ScrapFrameCapturer::new(Capturer::new(display).unwrap()))
         .append(time_diff!("capture_processing"))
+        .append(dumper!("raw_frame_buffer", "dump/input_frames"))
 }
 
 fn encoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
@@ -159,12 +167,14 @@ fn decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl F
         .append(pools.get("cb_channel_buffer").borrower())
         .append(pools.get("cr_channel_buffer").borrower())
         .append(H264Decoder::new())
+        .append(OnErrorSwitch::new(pipelines.get_mut("error")))
         .append(pools.get("encoded_frame_buffer").redeemer())
         .append(YUV420PToRGBAConverter::new())
         .append(pools.get("y_channel_buffer").redeemer())
         .append(pools.get("cb_channel_buffer").redeemer())
         .append(pools.get("cr_channel_buffer").redeemer())
         .append(time_diff!("decode_processing"))
+        .append(dumper!("raw_frame_buffer", "dump/decoded_frames"))
 }
 
 fn renderer(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
@@ -173,7 +183,7 @@ fn renderer(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl 
             "capture_timestamp",
             "frame_delay",
         ))
-        .append(ThresholdBasedFrameDropper::new("frame_delay", 2000))
+        .append(ThresholdBasedFrameDropper::new("frame_delay", 20000))
         .append(OnErrorSwitch::new(pipelines.get_mut("error")))
         .append(time_start!("render_processing"))
         .append(BerylliumRenderer::new(1280, 720))

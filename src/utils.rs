@@ -1,5 +1,9 @@
 use log::debug;
-use remotia::{processors::functional::Function, traits::FrameProcessor};
+use remotia::{
+    frame_dump::RawFrameDumper,
+    processors::{containers::sequential::Sequential, functional::Function},
+    traits::FrameProcessor,
+};
 
 pub fn printer() -> impl FrameProcessor {
     Function::new(|frame_data| {
@@ -23,4 +27,19 @@ pub fn void_dropper() -> impl FrameProcessor {
             Some(frame_data)
         }
     })
+}
+
+#[macro_export]
+macro_rules! dumper {
+    ($buffer_id: expr, $path: expr) => {
+        Sequential::new()
+            .append(Function::new(|mut frame_data| {
+                let buffer = frame_data.get_writable_buffer_ref($buffer_id).unwrap();
+                for i in 0..(buffer.len() / 4) {
+                    buffer[i * 4 + 3] = 255;
+                }
+                Some(frame_data)
+            }))
+            .append(RawFrameDumper::new($buffer_id, PathBuf::from($path)))
+    };
 }
