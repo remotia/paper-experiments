@@ -1,8 +1,5 @@
 use log::debug;
-use remotia::{
-    processors::{functional::Function},
-    traits::FrameProcessor,
-};
+use remotia::{processors::functional::Function, traits::FrameProcessor};
 
 pub fn printer() -> impl FrameProcessor {
     Function::new(|frame_data| {
@@ -40,5 +37,16 @@ macro_rules! dumper {
                 Some(frame_data)
             }))
             .append(RawFrameDumper::new($buffer_id, PathBuf::from($path)))
+    };
+}
+
+#[macro_export]
+macro_rules! buffer_peek {
+    ($header: expr, $buffer_id: expr) => {
+        Function::new(|mut frame_data| {
+            let buffer = frame_data.get_writable_buffer_ref($buffer_id).unwrap();
+            info!("{} peek: {:?}", $header, &buffer[0..128]);
+            Some(frame_data)
+        })
     };
 }

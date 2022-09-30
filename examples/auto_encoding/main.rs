@@ -1,5 +1,7 @@
-use paper_experiments::common::{decoder, renderer, capturer, encoder};
-use paper_experiments::panicker::Panicker;
+use paper_experiments::common::capturers::scrap_capturer;
+use paper_experiments::common::decoders::h264_decoder;
+use paper_experiments::common::encoders::x264_encoder;
+use paper_experiments::common::renderers::beryllium_renderer;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
 use paper_experiments::utils::printer;
@@ -11,7 +13,7 @@ use remotia::traits::FrameProcessor;
 use remotia::{
     pipeline::ascode::{component::Component, AscodePipeline},
     pool_registry::PoolRegistry,
-    processors::{containers::sequential::Sequential},
+    processors::containers::sequential::Sequential,
 };
 
 #[tokio::main]
@@ -31,6 +33,9 @@ async fn main() -> std::io::Result<()> {
     pools.register("cb_channel_buffer", 8, (width * height) / 4);
     pools.register("encoded_frame_buffer", 24, width * height * 4);
 
+    let width = width as u32;
+    let height = height as u32;
+
     let mut pipelines = PipelineRegistry::new();
 
     register!(
@@ -49,8 +54,8 @@ async fn main() -> std::io::Result<()> {
         "decoding",
         AscodePipeline::new().feedable().link(
             Component::new()
-                .append(decoder(&mut pools, &mut pipelines))
-                .append(renderer(&mut pools, &mut pipelines))
+                .append(h264_decoder(&mut pools, &mut pipelines))
+                .append(beryllium_renderer(&mut pools, &mut pipelines, width, height))
                 .append(logger())
         )
     );
@@ -61,12 +66,11 @@ async fn main() -> std::io::Result<()> {
         AscodePipeline::new().link(
             Component::new()
                 .append(Ticker::new(30))
-                .append(capturer(&mut pools, display_id))
-                .append(encoder(&mut pools, &mut pipelines))
+                .append(scrap_capturer(&mut pools, display_id))
+                .append(x264_encoder(&mut pools, &mut pipelines, width, height))
                 .append(Switch::new(pipelines.get_mut("decoding")))
         )
     );
-
 
     pipelines.run().await;
 
