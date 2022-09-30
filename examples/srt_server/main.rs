@@ -77,11 +77,13 @@ fn logger() -> impl FrameProcessor {
             CSVFrameDataSerializer::new("stats/server/processing.csv")
                 .log("capture_timestamp")
                 .log("capture_processing_time")
-                .log("encode_processing_time"),
+                .log("encode_processing_time")
+                .log("send_processing_time"),
         )
         .append(
             CSVFrameDataSerializer::new("stats/server/delay.csv")
                 .log("capture_timestamp")
-                .log("encode_delay"),
+                .log("encode_delay")
+                .log("send_delay"),
         )
 }

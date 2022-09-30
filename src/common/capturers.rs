@@ -1,14 +1,9 @@
-use std::path::PathBuf;
-
-use crate::dumper;
 use crate::time_diff;
 use crate::time_start;
 use log::debug;
 
 use crate::y4m_loader::Y4MLoader;
 use crate::yuv_to_rgba::YUV420PToRGBAConverter;
-use remotia::frame_dump::RawFrameDumper;
-use remotia::processors::functional::Function;
 use remotia::time::add::TimestampAdder;
 use remotia::time::diff::TimestampDiffCalculator;
 use remotia::traits::FrameProcessor;
@@ -31,7 +26,6 @@ pub fn scrap_capturer(pools: &mut PoolRegistry, display_id: usize) -> impl Frame
         .append(TimestampAdder::new("capture_timestamp"))
         .append(ScrapFrameCapturer::new(Capturer::new(display).unwrap()))
         .append(time_diff!("capture_processing"))
-        .append(dumper!("raw_frame_buffer", "dump/input_frames"))
 }
 
 pub fn y4m_capturer(pools: &mut PoolRegistry, file_path: &str) -> impl FrameProcessor {
@@ -50,5 +44,4 @@ pub fn y4m_capturer(pools: &mut PoolRegistry, file_path: &str) -> impl FrameProc
         .append(pools.get("cb_channel_buffer").redeemer())
         .append(pools.get("cr_channel_buffer").redeemer())
         .append(time_diff!("capture_processing"))
-        .append(dumper!("raw_frame_buffer", "dump/input_frames"))
 }

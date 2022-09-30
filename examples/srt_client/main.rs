@@ -69,11 +69,13 @@ fn logger() -> impl FrameProcessor {
         .append(
             CSVFrameDataSerializer::new("stats/client/idle.csv")
                 .log("capture_timestamp")
+                .log("receive_idle_time")
                 .log("decode_idle_time"),
         )
         .append(
             CSVFrameDataSerializer::new("stats/client/processing.csv")
                 .log("capture_timestamp")
+                .log("receive_processing_time")
                 .log("decode_processing_time")
                 .log("render_processing_time"),
         )

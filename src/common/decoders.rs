@@ -1,11 +1,7 @@
-use std::path::PathBuf;
-
-use crate::dumper;
 use crate::pipeline_registry::PipelineRegistry;
 use crate::time_diff;
 use crate::time_start;
 
-use remotia::frame_dump::RawFrameDumper;
 use remotia::processors::error_switch::OnErrorSwitch;
 use remotia::processors::functional::Function;
 use remotia::time::add::TimestampAdder;
@@ -32,7 +28,6 @@ pub fn h264_decoder(
         .append(OnErrorSwitch::new(pipelines.get_mut("error")))
         .append(pools.get("encoded_frame_buffer").redeemer())
         .append(time_diff!("decode_processing"))
-        .append(dumper!("raw_frame_buffer", "dump/decoded_frames"))
 }
 
 pub fn identity_decoder(pools: &mut PoolRegistry) -> impl FrameProcessor {
