@@ -10,6 +10,7 @@ use remotia::traits::FrameProcessor;
 use remotia::yuv420p::encoder::RGBAToYUV420PConverter;
 use remotia::{pool_registry::PoolRegistry, processors::containers::sequential::Sequential};
 use remotia_ffmpeg_codecs::encoders::x264::X264Encoder;
+use remotia_ffmpeg_codecs::encoders::x265::X265Encoder;
 
 pub fn x264_encoder(
     pools: &mut PoolRegistry,
@@ -17,8 +18,26 @@ pub fn x264_encoder(
     width: u32,
     height: u32,
 ) -> impl FrameProcessor {
-    let encoder = X264Encoder::new(width as i32, height as i32, "keyint=16");
+    let encoder = X264Encoder::new(width as i32, height as i32, "");
+    serial_ffmpeg_encoder(pools, pipelines, encoder.pusher(), encoder.puller())
+}
 
+pub fn x265_encoder(
+    pools: &mut PoolRegistry,
+    pipelines: &mut PipelineRegistry,
+    width: u32,
+    height: u32,
+) -> impl FrameProcessor {
+    let encoder = X265Encoder::new(width as i32, height as i32, "");
+    serial_ffmpeg_encoder(pools, pipelines, encoder.pusher(), encoder.puller())
+}
+
+fn serial_ffmpeg_encoder(
+    pools: &mut PoolRegistry,
+    pipelines: &mut PipelineRegistry,
+    pusher: impl FrameProcessor + Send + 'static,
+    puller: impl FrameProcessor + Send + 'static,
+) -> impl FrameProcessor {
     Sequential::new()
         .append(TimestampDiffCalculator::new(
             "capture_timestamp",
@@ -34,11 +53,11 @@ pub fn x264_encoder(
         .append(RGBAToYUV420PConverter::new())
         .append(pools.get("raw_frame_buffer").redeemer())
         .append(pools.get("encoded_frame_buffer").borrower())
-        .append(encoder.pusher())
+        .append(pusher)
         .append(pools.get("y_channel_buffer").redeemer())
         .append(pools.get("cb_channel_buffer").redeemer())
         .append(pools.get("cr_channel_buffer").redeemer())
-        .append(encoder.puller())
+        .append(puller)
         .append(time_diff!("encode_processing"))
 }
 

@@ -21,7 +21,7 @@ async fn main() -> std::io::Result<()> {
     // TODO: Make these fields configurable or retrieve them from the environment
     let width = 1280;
     let height = 720;
-    let display_id = 2;
+    let display_id = 1;
 
     let mut pools = PoolRegistry::new();
 

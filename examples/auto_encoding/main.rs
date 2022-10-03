@@ -1,10 +1,10 @@
 use paper_experiments::common::capturers::scrap_capturer;
-use paper_experiments::common::decoders::h264_decoder;
-use paper_experiments::common::encoders::x264_encoder;
+use paper_experiments::common::decoders::{h264_decoder, h265_decoder};
+use paper_experiments::common::encoders::{x264_encoder, x265_encoder};
 use paper_experiments::common::renderers::beryllium_renderer;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
-use paper_experiments::utils::printer;
+use paper_experiments::utils::{delay_controller, printer};
 
 use remotia::csv::serializer::CSVFrameDataSerializer;
 use remotia::processors::switch::Switch;
@@ -54,8 +54,13 @@ async fn main() -> std::io::Result<()> {
         "decoding",
         AscodePipeline::new().feedable().link(
             Component::new()
-                .append(h264_decoder(&mut pools, &mut pipelines))
-                .append(beryllium_renderer(&mut pools, &mut pipelines, width, height))
+                .append(h265_decoder(&mut pools, &mut pipelines))
+                .append(delay_controller(
+                    "frame_delay",
+                    100,
+                    pipelines.get_mut("error")
+                ))
+                .append(beryllium_renderer(&mut pools, width, height))
                 .append(logger())
         )
     );
@@ -63,13 +68,22 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "encoding",
-        AscodePipeline::new().link(
-            Component::new()
-                .append(Ticker::new(30))
-                .append(scrap_capturer(&mut pools, display_id))
-                .append(x264_encoder(&mut pools, &mut pipelines, width, height))
-                .append(Switch::new(pipelines.get_mut("decoding")))
-        )
+        AscodePipeline::new()
+            .link(
+                Component::new()
+                    .append(Ticker::new(30))
+                    .append(scrap_capturer(&mut pools, display_id))
+            )
+            .link(
+                Component::new()
+                    .append(delay_controller(
+                        "pre_encode_delay",
+                        20,
+                        pipelines.get_mut("error")
+                    ))
+                    .append(x265_encoder(&mut pools, &mut pipelines, width, height))
+                    .append(Switch::new(pipelines.get_mut("decoding")))
+            )
     );
 
     pipelines.run().await;

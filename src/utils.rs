@@ -1,5 +1,9 @@
 use log::debug;
-use remotia::{processors::functional::Function, traits::FrameProcessor};
+use remotia::{
+    pipeline::ascode::AscodePipeline,
+    processors::{containers::sequential::Sequential, functional::Function, frame_drop::threshold::ThresholdBasedFrameDropper, error_switch::OnErrorSwitch},
+    traits::FrameProcessor, time::diff::TimestampDiffCalculator,
+};
 
 pub fn printer() -> impl FrameProcessor {
     Function::new(|frame_data| {
@@ -23,6 +27,17 @@ pub fn void_dropper() -> impl FrameProcessor {
             Some(frame_data)
         }
     })
+}
+
+pub fn delay_controller(
+    stat_id: &str,
+    threshold: u128,
+    switch_pipeline: &mut AscodePipeline,
+) -> impl FrameProcessor {
+    Sequential::new()
+        .append(TimestampDiffCalculator::new("capture_timestamp", stat_id))
+        .append(ThresholdBasedFrameDropper::new(stat_id, threshold))
+        .append(OnErrorSwitch::new(switch_pipeline))
 }
 
 #[macro_export]

@@ -14,17 +14,11 @@ use remotia::{
 
 pub fn beryllium_renderer(
     pools: &mut PoolRegistry,
-    pipelines: &mut PipelineRegistry,
     width: u32,
     height: u32,
 ) -> impl FrameProcessor {
     Sequential::new()
-        .append(TimestampDiffCalculator::new(
-            "capture_timestamp",
-            "frame_delay",
-        ))
-        .append(ThresholdBasedFrameDropper::new("frame_delay", 20000))
-        .append(OnErrorSwitch::new(pipelines.get_mut("error")))
+
         .append(time_start!("render_processing"))
         .append(BerylliumRenderer::new(width, height))
         .append(pools.get("raw_frame_buffer").redeemer())
