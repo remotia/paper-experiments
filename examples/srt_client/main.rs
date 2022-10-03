@@ -54,7 +54,7 @@ async fn main() -> std::io::Result<()> {
                 .append(srt_receiver(&mut pools).await)
                 .append(OnErrorSwitch::new(pipelines.get_mut("error")))
                 .append(h264_decoder(&mut pools, &mut pipelines))
-                .append(beryllium_renderer(&mut pools, &mut pipelines, width, height))
+                .append(beryllium_renderer(&mut pools, width, height))
                 .append(logger())
         )
     );

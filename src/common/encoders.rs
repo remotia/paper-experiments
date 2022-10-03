@@ -9,6 +9,7 @@ use remotia::time::diff::TimestampDiffCalculator;
 use remotia::traits::FrameProcessor;
 use remotia::yuv420p::encoder::RGBAToYUV420PConverter;
 use remotia::{pool_registry::PoolRegistry, processors::containers::sequential::Sequential};
+use remotia_ffmpeg_codecs::encoders::libvpx_vp9::LibVpxVP9Encoder;
 use remotia_ffmpeg_codecs::encoders::x264::X264Encoder;
 use remotia_ffmpeg_codecs::encoders::x265::X265Encoder;
 
@@ -29,6 +30,16 @@ pub fn x265_encoder(
     height: u32,
 ) -> impl FrameProcessor {
     let encoder = X265Encoder::new(width as i32, height as i32, "");
+    serial_ffmpeg_encoder(pools, pipelines, encoder.pusher(), encoder.puller())
+}
+
+pub fn vp9_encoder(
+    pools: &mut PoolRegistry,
+    pipelines: &mut PipelineRegistry,
+    width: u32,
+    height: u32,
+) -> impl FrameProcessor {
+    let encoder = LibVpxVP9Encoder::new(width as i32, height as i32);
     serial_ffmpeg_encoder(pools, pipelines, encoder.pusher(), encoder.puller())
 }
 

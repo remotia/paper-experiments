@@ -18,7 +18,6 @@ pub fn beryllium_renderer(
     height: u32,
 ) -> impl FrameProcessor {
     Sequential::new()
-
         .append(time_start!("render_processing"))
         .append(BerylliumRenderer::new(width, height))
         .append(pools.get("raw_frame_buffer").redeemer())
