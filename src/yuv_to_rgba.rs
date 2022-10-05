@@ -64,7 +64,7 @@ impl FrameProcessor for YUV420PToRGBAConverter {
             .extract_writable_buffer(&self.v_buffer_id)
             .unwrap();
 
-        yuv_to_bgra_separate(
+        yuv_to_rgba_separate(
             &y_channel_buffer,
             &cb_channel_buffer,
             &cr_channel_buffer,
@@ -80,32 +80,29 @@ impl FrameProcessor for YUV420PToRGBAConverter {
     }
 }
 
-fn yuv_to_bgra_separate(y_pixels: &[u8], u_pixels: &[u8], v_pixels: &[u8], bgra_pixels: &mut [u8]) {
+fn yuv_to_rgba_separate(y_pixels: &[u8], u_pixels: &[u8], v_pixels: &[u8], rgba_pixels: &mut [u8]) {
     let pixels_count = y_pixels.len();
 
     (0..pixels_count).into_iter().for_each(|i| {
         let (y, u, v) = (y_pixels[i], u_pixels[i / 4], v_pixels[i / 4]);
 
-        let (r, g, b) = yuv_to_rgb(y, u, v);
+        let (b, g, r) = yuv_to_bgr(y, u, v);
 
-        bgra_pixels[i * 4] = b;
-        bgra_pixels[i * 4 + 1] = g;
-        bgra_pixels[i * 4 + 2] = r;
-        bgra_pixels[i * 4 + 3] = 255;
+        rgba_pixels[i * 4] = r;
+        rgba_pixels[i * 4 + 1] = g;
+        rgba_pixels[i * 4 + 2] = b;
+        rgba_pixels[i * 4 + 3] = 255;
     });
 }
 
-pub fn yuv_to_rgb(_y: u8, _u: u8, _v: u8) -> (u8, u8, u8) {
-    let mut y = _y as f32;
-    let mut u = _u as f32;
-    let mut v = _v as f32;
+pub fn yuv_to_bgr(_y: u8, _u: u8, _v: u8) -> (u8, u8, u8) {
+    let y: f64 = _y as f64;
+    let u: f64 = ((_u as i16) - 128) as f64;
+    let v: f64 = ((_v as i16) - 128) as f64;
 
-    y -= 16.0;
-    u -= 128.0;
-    v -= 128.0;
-    let r = 1.164 * y + 1.596 * v;
-    let g = 1.164 * y - 0.392 * u - 0.813 * v;
-    let b = 1.164 * y + 2.017 * u;
+    let b = (y + u * 1.77200) as u8;
+    let g = (y + u * -0.34414 + v * -0.71414) as u8;
+    let r = (y + v * 1.40200) as u8;
 
-    (r as u8, g as u8, b as u8)
+    (b, g, r)
 }
