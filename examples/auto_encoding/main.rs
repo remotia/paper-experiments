@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     // TODO: Make these fields configurable or retrieve them from the environment
-    let width = 720;
+    let width = 1280;
     let height = 720;
     let display_id = 2;
 
@@ -61,7 +61,7 @@ async fn main() -> std::io::Result<()> {
                     20000,
                     pipelines.get_mut("error")
                 ))
-                // .append(beryllium_renderer(&mut pools, width, height))
+                .append(beryllium_renderer(&mut pools, width, height))
                 .append(logger())
         )
     );
@@ -72,9 +72,9 @@ async fn main() -> std::io::Result<()> {
         AscodePipeline::new()
             .link(
                 Component::new()
-                    .append(Ticker::new(30))
+                    .append(Ticker::new(100))
                     // .append(scrap_capturer(&mut pools, display_id))
-                    .append(y4m_capturer(&mut pools, "videos/nerv_bunny_720x720.y4m"))
+                    .append(y4m_capturer(&mut pools, "videos/nerv_bunny.y4m"))
             )
             .link(
                 Component::new()
