@@ -55,7 +55,7 @@ async fn main() -> std::io::Result<()> {
         "decoding",
         AscodePipeline::new()
             .feedable()
-            .link(Component::singleton(decoders::h264_decoder(&mut pools, &mut pipelines)))
+            .link(Component::new().append(decoders::h264_decoder(&mut pools, &mut pipelines)))
             .link(
                 Component::new()
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))

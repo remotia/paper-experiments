@@ -1,9 +1,9 @@
-use paper_experiments::common::decoders::h264_decoder;
+use paper_experiments::common::decoders;
 use paper_experiments::common::receivers::srt_receiver;
 use paper_experiments::common::renderers::beryllium_renderer;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
-use paper_experiments::utils::printer;
+use paper_experiments::utils::{delay_controller, printer};
 
 use remotia::csv::serializer::CSVFrameDataSerializer;
 use remotia::processors::error_switch::OnErrorSwitch;
@@ -49,14 +49,19 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "decoding",
-        AscodePipeline::new().link(
-            Component::new()
-                .append(srt_receiver(&mut pools).await)
-                .append(OnErrorSwitch::new(pipelines.get_mut("error")))
-                .append(h264_decoder(&mut pools, &mut pipelines))
-                .append(beryllium_renderer(&mut pools, width, height))
-                .append(logger())
-        )
+        AscodePipeline::new()
+            .link(
+                Component::new()
+                    .append(srt_receiver(&mut pools).await)
+                    .append(OnErrorSwitch::new(pipelines.get_mut("error")))
+            )
+            .link(Component::singleton(decoders::h264(&mut pools, &mut pipelines)))
+            .link(
+                Component::new()
+                    .append(delay_controller("frame_delay", 200, pipelines.get_mut("error")))
+                    .append(beryllium_renderer(&mut pools, width, height))
+                    .append(logger())
+            )
     );
 
     pipelines.run().await;

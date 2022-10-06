@@ -1,9 +1,9 @@
-use paper_experiments::common::capturers::scrap_capturer;
-use paper_experiments::common::encoders::x264_encoder;
+use paper_experiments::common::capturers;
 use paper_experiments::common::senders::srt_sender;
+use paper_experiments::common::{color_converters, encoders};
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
-use paper_experiments::utils::printer;
+use paper_experiments::utils::{delay_controller, printer};
 
 use remotia::csv::serializer::CSVFrameDataSerializer;
 use remotia::processors::ticker::Ticker;
@@ -21,7 +21,7 @@ async fn main() -> std::io::Result<()> {
     // TODO: Make these fields configurable or retrieve them from the environment
     let width = 1280;
     let height = 720;
-    let display_id = 1;
+    let display_id = 2;
 
     let mut pools = PoolRegistry::new();
 
@@ -50,14 +50,23 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "encoding",
-        AscodePipeline::new().link(
-            Component::new()
-                .append(Ticker::new(50))
-                .append(scrap_capturer(&mut pools, display_id))
-                .append(x264_encoder(&mut pools, width, height))
-                .append(srt_sender(&mut pools).await)
-                .append(logger())
-        )
+        AscodePipeline::new()
+            .link(
+                Component::new()
+                    .append(Ticker::new(33))
+                    .append(capturers::scrap_capturer(&mut pools, display_id))
+            )
+            .link(
+                Component::new()
+                    .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
+                    .append(color_converters::rgba_to_yuv420p(&mut pools))
+                    .append(encoders::x264(&mut pools, width, height))
+            )
+            .link(
+                Component::new()
+                    .append(srt_sender(&mut pools).await)
+                    .append(logger())
+            )
     );
 
     pipelines.run().await;
