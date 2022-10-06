@@ -1,8 +1,12 @@
 use log::debug;
 use remotia::{
     pipeline::ascode::AscodePipeline,
-    processors::{containers::sequential::Sequential, functional::Function, frame_drop::threshold::ThresholdBasedFrameDropper, error_switch::OnErrorSwitch},
-    traits::FrameProcessor, time::diff::TimestampDiffCalculator,
+    processors::{
+        containers::sequential::Sequential, error_switch::OnErrorSwitch,
+        frame_drop::threshold::ThresholdBasedFrameDropper, functional::Function,
+    },
+    time::diff::TimestampDiffCalculator,
+    traits::FrameProcessor,
 };
 
 pub fn printer() -> impl FrameProcessor {
@@ -18,10 +22,7 @@ pub fn printer() -> impl FrameProcessor {
 pub fn void_dropper() -> impl FrameProcessor {
     Function::new(|frame_data| {
         if frame_data.get_drop_reason().is_some() {
-            debug!(
-                "Dropping frame because of {:?}",
-                frame_data.get_drop_reason().unwrap()
-            );
+            debug!("Dropping frame because of {:?}", frame_data.get_drop_reason().unwrap());
             None
         } else {
             Some(frame_data)
@@ -29,11 +30,7 @@ pub fn void_dropper() -> impl FrameProcessor {
     })
 }
 
-pub fn delay_controller(
-    stat_id: &str,
-    threshold: u128,
-    switch_pipeline: &mut AscodePipeline,
-) -> impl FrameProcessor {
+pub fn delay_controller(stat_id: &str, threshold: u128, switch_pipeline: &mut AscodePipeline) -> impl FrameProcessor {
     Sequential::new()
         .append(TimestampDiffCalculator::new("capture_timestamp", stat_id))
         .append(ThresholdBasedFrameDropper::new(stat_id, threshold))

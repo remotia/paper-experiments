@@ -12,24 +12,15 @@ use remotia_ffmpeg_codecs::decoders::h264::H264Decoder;
 use remotia_ffmpeg_codecs::decoders::hevc::HEVCDecoder;
 use remotia_ffmpeg_codecs::decoders::libvpx_vp9::LibVpxVP9Decoder;
 
-pub fn h264_decoder(
-    pools: &mut PoolRegistry,
-    pipelines: &mut PipelineRegistry,
-) -> impl FrameProcessor {
+pub fn h264_decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
     serial_ffmpeg_decoder(pools, pipelines, H264Decoder::new())
 }
 
-pub fn h265_decoder(
-    pools: &mut PoolRegistry,
-    pipelines: &mut PipelineRegistry,
-) -> impl FrameProcessor {
+pub fn h265_decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
     serial_ffmpeg_decoder(pools, pipelines, HEVCDecoder::new())
 }
 
-pub fn vp9_decoder(
-    pools: &mut PoolRegistry,
-    pipelines: &mut PipelineRegistry,
-) -> impl FrameProcessor {
+pub fn vp9_decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
     serial_ffmpeg_decoder(pools, pipelines, LibVpxVP9Decoder::new())
 }
 
@@ -39,10 +30,7 @@ pub fn serial_ffmpeg_decoder(
     decoder: impl FrameProcessor + Send + 'static,
 ) -> impl FrameProcessor {
     Sequential::new()
-        .append(TimestampDiffCalculator::new(
-            "capture_timestamp",
-            "decode_delay",
-        ))
+        .append(TimestampDiffCalculator::new("capture_timestamp", "decode_delay"))
         .append(time_start!("decode_idle"))
         .append(pools.get("raw_frame_buffer").borrower())
         .append(OnErrorSwitch::new(pipelines.get_mut("error")))

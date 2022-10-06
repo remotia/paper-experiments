@@ -1,16 +1,16 @@
 use std::{fs::File, time::Duration};
 
 use async_trait::async_trait;
-use log::{debug};
-use remotia::{traits::FrameProcessor, types::FrameData, error::DropReason};
+use log::debug;
+use remotia::{error::DropReason, traits::FrameProcessor, types::FrameData};
 use y4m::Decoder;
 
 pub struct Y4MLoader {
     stream: Decoder<File>,
-    path: String, 
+    path: String,
 
     extracted_frames: u64,
-    stop_after: Option<u64>
+    stop_after: Option<u64>,
 }
 
 impl Y4MLoader {
@@ -19,7 +19,7 @@ impl Y4MLoader {
             stream: y4m::decode(File::open(path).unwrap()).unwrap(),
             path: path.to_string(),
             stop_after: None,
-            extracted_frames: 0
+            extracted_frames: 0,
         }
     }
 

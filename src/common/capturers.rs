@@ -7,10 +7,7 @@ use crate::yuv_to_rgba::YUV420PToRGBAConverter;
 use remotia::time::add::TimestampAdder;
 use remotia::time::diff::TimestampDiffCalculator;
 use remotia::traits::FrameProcessor;
-use remotia::{
-    pool_registry::PoolRegistry, processors::containers::sequential::Sequential,
-    scrap::ScrapFrameCapturer,
-};
+use remotia::{pool_registry::PoolRegistry, processors::containers::sequential::Sequential, scrap::ScrapFrameCapturer};
 use scrap::{Capturer, Display};
 
 pub fn scrap_capturer(pools: &mut PoolRegistry, display_id: usize) -> impl FrameProcessor {

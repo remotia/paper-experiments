@@ -50,10 +50,7 @@ fn serial_ffmpeg_encoder(
     puller: impl FrameProcessor + Send + 'static,
 ) -> impl FrameProcessor {
     Sequential::new()
-        .append(TimestampDiffCalculator::new(
-            "capture_timestamp",
-            "encode_delay",
-        ))
+        .append(TimestampDiffCalculator::new("capture_timestamp", "encode_delay"))
         .append(time_start!("encode_idle"))
         .append(pools.get("y_channel_buffer").borrower())
         .append(pools.get("cb_channel_buffer").borrower())

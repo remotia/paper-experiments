@@ -43,10 +43,8 @@ impl PipelineRegistry {
 
 #[macro_export]
 macro_rules! register {
-    ($registry:ident, $id:expr, $pipeline:expr) => {
-        {
-            let _pipe = $pipeline;
-            $registry.register($id, _pipe);
-        }
-    };
+    ($registry:ident, $id:expr, $pipeline:expr) => {{
+        let _pipe = $pipeline;
+        $registry.register($id, _pipe);
+    }};
 }

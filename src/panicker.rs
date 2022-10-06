@@ -27,4 +27,3 @@ impl FrameProcessor for Panicker {
         Some(frame_data)
     }
 }
-

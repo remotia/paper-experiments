@@ -1,5 +1,4 @@
-use paper_experiments::common::capturers::scrap_capturer;
-use paper_experiments::common::capturers::y4m_capturer;
+use paper_experiments::common::capturers;
 use paper_experiments::common::decoders;
 use paper_experiments::common::encoders;
 use paper_experiments::common::renderers::beryllium_renderer;
@@ -55,12 +54,8 @@ async fn main() -> std::io::Result<()> {
         "decoding",
         AscodePipeline::new().feedable().link(
             Component::new()
-                .append(decoders::vp9_decoder(&mut pools, &mut pipelines))
-                .append(delay_controller(
-                    "frame_delay",
-                    20000,
-                    pipelines.get_mut("error")
-                ))
+                .append(decoders::h264_decoder(&mut pools, &mut pipelines))
+                .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
                 .append(beryllium_renderer(&mut pools, width, height))
                 .append(logger())
         )
@@ -72,23 +67,13 @@ async fn main() -> std::io::Result<()> {
         AscodePipeline::new()
             .link(
                 Component::new()
-                    .append(Ticker::new(100))
-                    // .append(scrap_capturer(&mut pools, display_id))
-                    .append(y4m_capturer(&mut pools, "videos/nerv_bunny.y4m"))
+                    .append(Ticker::new(33))
+                    .append(capturers::scrap_capturer(&mut pools, display_id))
             )
             .link(
                 Component::new()
-                    .append(delay_controller(
-                        "pre_encode_delay",
-                        200000,
-                        pipelines.get_mut("error")
-                    ))
-                    .append(encoders::vp9_encoder(
-                        &mut pools,
-                        &mut pipelines,
-                        width,
-                        height
-                    ))
+                    .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
+                    .append(encoders::x264_encoder(&mut pools, &mut pipelines, width, height))
                     .append(Switch::new(pipelines.get_mut("decoding")))
             )
     );
