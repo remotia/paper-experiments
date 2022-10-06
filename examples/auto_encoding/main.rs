@@ -55,7 +55,11 @@ async fn main() -> std::io::Result<()> {
         "decoding",
         AscodePipeline::new()
             .feedable()
-            .link(Component::new().append(decoders::h264_decoder(&mut pools, &mut pipelines)))
+            .link(
+                Component::new()
+                    .append(decoders::h264(&mut pools, &mut pipelines))
+                    .append(color_converters::yuv420p_to_rgba(&mut pools))
+            )
             .link(
                 Component::new()
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
@@ -77,7 +81,7 @@ async fn main() -> std::io::Result<()> {
                 Component::new()
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
                     .append(color_converters::rgba_to_yuv420p(&mut pools))
-                    .append(encoders::x264_encoder(&mut pools, width, height))
+                    .append(encoders::x264(&mut pools, width, height))
                     .append(Switch::new(pipelines.get_mut("decoding")))
             )
     );
@@ -93,25 +97,28 @@ fn logger() -> impl FrameProcessor {
             CSVFrameDataSerializer::new("stats/idle.csv")
                 .log("capture_timestamp")
                 .log("capture_idle_time")
-                .log("colorspace_conversion_idle_time")
+                .log("yuv420p_conversion_idle_time")
                 .log("encode_idle_time")
-                .log("decode_idle_time"),
+                .log("decode_idle_time")
+                .log("rgba_conversion_idle_time"),
         )
         .append(
             CSVFrameDataSerializer::new("stats/processing.csv")
                 .log("capture_timestamp")
                 .log("capture_processing_time")
-                .log("colorspace_conversion_processing_time")
+                .log("yuv420p_conversion_processing_time")
                 .log("encode_processing_time")
                 .log("decode_processing_time")
+                .log("rgba_conversion_processing_time")
                 .log("render_processing_time"),
         )
         .append(
             CSVFrameDataSerializer::new("stats/delay.csv")
                 .log("capture_timestamp")
-                .log("colorspace_conversion_delay")
+                .log("yuv420p_conversion_delay")
                 .log("encode_delay")
                 .log("decode_delay")
+                .log("rgba_conversion_delay")
                 .log("frame_delay"),
         )
 }
