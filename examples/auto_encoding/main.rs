@@ -1,4 +1,5 @@
 use paper_experiments::common::capturers;
+use paper_experiments::common::color_converters;
 use paper_experiments::common::decoders;
 use paper_experiments::common::encoders;
 use paper_experiments::common::renderers::beryllium_renderer;
@@ -52,13 +53,15 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "decoding",
-        AscodePipeline::new().feedable().link(
-            Component::new()
-                .append(decoders::h264_decoder(&mut pools, &mut pipelines))
-                .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
-                .append(beryllium_renderer(&mut pools, width, height))
-                .append(logger())
-        )
+        AscodePipeline::new()
+            .feedable()
+            .link(Component::singleton(decoders::h264_decoder(&mut pools, &mut pipelines)))
+            .link(
+                Component::new()
+                    .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
+                    .append(beryllium_renderer(&mut pools, width, height))
+                    .append(logger())
+            )
     );
 
     register!(
@@ -73,7 +76,8 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
-                    .append(encoders::x264_encoder(&mut pools, &mut pipelines, width, height))
+                    .append(color_converters::rgba_to_yuv420p(&mut pools))
+                    .append(encoders::x264_encoder(&mut pools, width, height))
                     .append(Switch::new(pipelines.get_mut("decoding")))
             )
     );
@@ -89,6 +93,7 @@ fn logger() -> impl FrameProcessor {
             CSVFrameDataSerializer::new("stats/idle.csv")
                 .log("capture_timestamp")
                 .log("capture_idle_time")
+                .log("colorspace_conversion_idle_time")
                 .log("encode_idle_time")
                 .log("decode_idle_time"),
         )
@@ -96,6 +101,7 @@ fn logger() -> impl FrameProcessor {
             CSVFrameDataSerializer::new("stats/processing.csv")
                 .log("capture_timestamp")
                 .log("capture_processing_time")
+                .log("colorspace_conversion_processing_time")
                 .log("encode_processing_time")
                 .log("decode_processing_time")
                 .log("render_processing_time"),
@@ -103,6 +109,7 @@ fn logger() -> impl FrameProcessor {
         .append(
             CSVFrameDataSerializer::new("stats/delay.csv")
                 .log("capture_timestamp")
+                .log("colorspace_conversion_delay")
                 .log("encode_delay")
                 .log("decode_delay")
                 .log("frame_delay"),
