@@ -54,7 +54,7 @@ async fn main() -> std::io::Result<()> {
             Component::new()
                 .append(Ticker::new(50))
                 .append(scrap_capturer(&mut pools, display_id))
-                .append(x264_encoder(&mut pools, &mut pipelines, width, height))
+                .append(x264_encoder(&mut pools, width, height))
                 .append(srt_sender(&mut pools).await)
                 .append(logger())
         )

@@ -12,11 +12,16 @@ use remotia_ffmpeg_codecs::decoders::h264::H264Decoder;
 use remotia_ffmpeg_codecs::decoders::hevc::HEVCDecoder;
 use remotia_ffmpeg_codecs::decoders::libvpx_vp9::LibVpxVP9Decoder;
 
+pub use self::h264_decoder as h264;
+pub use self::hevc_decoder as hevc;
+pub use self::vp9_decoder as vp9;
+pub use self::identity_decoder as identity;
+
 pub fn h264_decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
     serial_ffmpeg_decoder(pools, pipelines, H264Decoder::new())
 }
 
-pub fn h265_decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
+pub fn hevc_decoder(pools: &mut PoolRegistry, pipelines: &mut PipelineRegistry) -> impl FrameProcessor {
     serial_ffmpeg_decoder(pools, pipelines, HEVCDecoder::new())
 }
 
