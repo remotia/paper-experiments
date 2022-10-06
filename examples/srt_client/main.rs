@@ -1,8 +1,8 @@
-use paper_experiments::common::decoders;
+use paper_experiments::common::{decoders, color_converters};
 use paper_experiments::common::receivers::srt_receiver;
 use paper_experiments::common::renderers::beryllium_renderer;
 use paper_experiments::pipeline_registry::PipelineRegistry;
-use paper_experiments::register;
+use paper_experiments::{register};
 use paper_experiments::utils::{delay_controller, printer};
 
 use remotia::csv::serializer::CSVFrameDataSerializer;
@@ -55,7 +55,11 @@ async fn main() -> std::io::Result<()> {
                     .append(srt_receiver(&mut pools).await)
                     .append(OnErrorSwitch::new(pipelines.get_mut("error")))
             )
-            .link(Component::singleton(decoders::h264(&mut pools, &mut pipelines)))
+            .link(
+                Component::new()
+                    .append(decoders::h264(&mut pools, &mut pipelines))
+                    .append(color_converters::yuv420p_to_bgra(&mut pools))
+            )
             .link(
                 Component::new()
                     .append(delay_controller("frame_delay", 200, pipelines.get_mut("error")))
@@ -75,19 +79,22 @@ fn logger() -> impl FrameProcessor {
             CSVFrameDataSerializer::new("stats/client/idle.csv")
                 .log("capture_timestamp")
                 .log("receive_idle_time")
-                .log("decode_idle_time"),
+                .log("decode_idle_time")
+                .log("rgba_conversion_idle_time")
         )
         .append(
             CSVFrameDataSerializer::new("stats/client/processing.csv")
                 .log("capture_timestamp")
                 .log("receive_processing_time")
                 .log("decode_processing_time")
+                .log("rgba_conversion_processing_time")
                 .log("render_processing_time"),
         )
         .append(
             CSVFrameDataSerializer::new("stats/client/delay.csv")
                 .log("capture_timestamp")
                 .log("decode_delay")
+                .log("rgba_conversion_delay")
                 .log("frame_delay"),
         )
 }

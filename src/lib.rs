@@ -7,3 +7,4 @@ pub mod pipeline_registry;
 pub mod time_utils;
 pub mod y4m_loader;
 pub mod yuv_to_rgba;
+pub mod yuv_to_bgra;

@@ -16,7 +16,7 @@ pub use self::vp9_encoder as vp9;
 pub use self::identity_encoder as identity;
 
 pub fn x264_encoder(pools: &mut PoolRegistry, width: u32, height: u32) -> impl FrameProcessor {
-    let encoder = X264Encoder::new(width as i32, height as i32, "");
+    let encoder = X264Encoder::new(width as i32, height as i32, "keyint=16");
     serial_ffmpeg_encoder(pools, encoder.pusher(), encoder.puller())
 }
 
