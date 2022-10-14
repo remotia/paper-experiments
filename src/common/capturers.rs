@@ -25,7 +25,7 @@ pub fn scrap_capturer(pools: &mut PoolRegistry, display_id: usize) -> impl Frame
         .append(time_diff!("capture_processing"))
 }
 
-pub fn y4m_capturer(pools: &mut PoolRegistry, file_path: &str) -> impl FrameProcessor {
+pub fn y4m_capturer(pools: &mut PoolRegistry, (width, height): (u32, u32), file_path: &str) -> impl FrameProcessor {
     Sequential::new()
         .append(time_start!("capture_idle"))
         .append(pools.get("raw_frame_buffer").borrower())
@@ -36,7 +36,7 @@ pub fn y4m_capturer(pools: &mut PoolRegistry, file_path: &str) -> impl FrameProc
         .append(time_start!("capture_processing"))
         .append(TimestampAdder::new("capture_timestamp"))
         .append(Y4MLoader::new(file_path))
-        .append(YUV420PToRGBAConverter::new())
+        .append(YUV420PToRGBAConverter::new(width, height))
         .append(pools.get("y_channel_buffer").redeemer())
         .append(pools.get("cb_channel_buffer").redeemer())
         .append(pools.get("cr_channel_buffer").redeemer())

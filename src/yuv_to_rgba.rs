@@ -3,6 +3,9 @@ use log::debug;
 use remotia::{traits::FrameProcessor, types::FrameData};
 
 pub struct YUV420PToRGBAConverter {
+    width: u32,
+    height: u32,
+
     y_buffer_id: String,
     u_buffer_id: String,
     v_buffer_id: String,
@@ -10,8 +13,10 @@ pub struct YUV420PToRGBAConverter {
 }
 
 impl YUV420PToRGBAConverter {
-    pub fn new() -> Self {
+    pub fn new(width: u32, height: u32) -> Self {
         Self {
+            width,
+            height,
             y_buffer_id: "y_channel_buffer".to_string(),
             u_buffer_id: "cb_channel_buffer".to_string(),
             v_buffer_id: "cr_channel_buffer".to_string(),
@@ -40,12 +45,6 @@ impl YUV420PToRGBAConverter {
     }
 }
 
-impl Default for YUV420PToRGBAConverter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[async_trait]
 impl FrameProcessor for YUV420PToRGBAConverter {
     async fn process(&mut self, mut frame_data: FrameData) -> Option<FrameData> {
@@ -65,6 +64,8 @@ impl FrameProcessor for YUV420PToRGBAConverter {
             .unwrap();
 
         yuv_to_rgba_separate(
+            self.width as usize,
+            self.height as usize,
             &y_channel_buffer,
             &cb_channel_buffer,
             &cr_channel_buffer,
@@ -80,29 +81,40 @@ impl FrameProcessor for YUV420PToRGBAConverter {
     }
 }
 
-fn yuv_to_rgba_separate(y_pixels: &[u8], u_pixels: &[u8], v_pixels: &[u8], rgba_pixels: &mut [u8]) {
-    let pixels_count = y_pixels.len();
+fn yuv_to_rgba_separate(
+    width: usize,
+    height: usize,
+    y_pixels: &[u8],
+    u_pixels: &[u8],
+    v_pixels: &[u8],
+    rgba_pixels: &mut [u8],
+) {
+    for row in 0..height {
+        for column in 0..width {
+            let i = row * width + column;
 
-    (0..pixels_count).into_iter().for_each(|i| {
-        let (y, u, v) = (y_pixels[i], u_pixels[i / 4], v_pixels[i / 4]);
+            let y = y_pixels[i];
+            let u = u_pixels[(row / 2) * width / 2 + (column / 2)];
+            let v = v_pixels[(row / 2) * width / 2 + (column / 2)];
 
-        let (b, g, r) = yuv_to_bgr(y, u, v);
+            let (b, g, r) = yuv_to_bgr(y, u, v);
 
-        rgba_pixels[i * 4] = r;
-        rgba_pixels[i * 4 + 1] = g;
-        rgba_pixels[i * 4 + 2] = b;
-        rgba_pixels[i * 4 + 3] = 255;
-    });
+            rgba_pixels[i * 4] = r;
+            rgba_pixels[i * 4 + 1] = g;
+            rgba_pixels[i * 4 + 2] = b;
+            rgba_pixels[i * 4 + 3] = 255;
+        }
+    }
 }
 
-pub fn yuv_to_bgr(_y: u8, _u: u8, _v: u8) -> (u8, u8, u8) {
-    let y: f64 = _y as f64;
-    let u: f64 = ((_u as i16) - 128) as f64;
-    let v: f64 = ((_v as i16) - 128) as f64;
+pub fn yuv_to_bgr(y: u8, u: u8, v: u8) -> (u8, u8, u8) {
+    let y: f64 = y as f64;
+    let u: f64 = ((u as i16) - 128) as f64;
+    let v: f64 = ((v as i16) - 128) as f64;
 
-    let b = (y + u * 1.77200) as u8;
-    let g = (y + u * -0.34414 + v * -0.71414) as u8;
     let r = (y + v * 1.40200) as u8;
+    let g = (y + u * -0.34414 + v * -0.71414) as u8;
+    let b = (y + u * 1.77200) as u8;
 
     (b, g, r)
 }

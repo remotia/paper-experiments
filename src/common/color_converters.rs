@@ -6,11 +6,11 @@ use remotia::{
     yuv420p::encoder::RGBAToYUV420PConverter,
 };
 
-use crate::{time_diff, time_start, yuv_to_rgba::YUV420PToRGBAConverter, yuv_to_bgra::YUV420PToBGRAConverter};
+use crate::{time_diff, time_start, yuv_to_bgra::YUV420PToBGRAConverter, yuv_to_rgba::YUV420PToRGBAConverter};
 
 pub use self::rgba_to_yuv420p_converter as rgba_to_yuv420p;
-pub use self::yuv420p_to_rgba_converter as yuv420p_to_rgba;
 pub use self::yuv420p_to_bgra_converter as yuv420p_to_bgra;
+pub use self::yuv420p_to_rgba_converter as yuv420p_to_rgba;
 
 pub fn rgba_to_yuv420p_converter(pools: &mut PoolRegistry) -> impl FrameProcessor {
     Sequential::new()
@@ -29,16 +29,16 @@ pub fn rgba_to_yuv420p_converter(pools: &mut PoolRegistry) -> impl FrameProcesso
         .append(time_diff!("yuv420p_conversion_processing"))
 }
 
-
-pub fn yuv420p_to_rgba_converter(pools: &mut PoolRegistry) -> impl FrameProcessor {
-    yuv420p_to_x_converter(pools, YUV420PToRGBAConverter::new())
+pub fn yuv420p_to_rgba_converter(pools: &mut PoolRegistry, (width, height): (u32, u32)) -> impl FrameProcessor {
+    yuv420p_to_x_converter(pools, YUV420PToRGBAConverter::new(width, height))
 }
 
 pub fn yuv420p_to_bgra_converter(pools: &mut PoolRegistry) -> impl FrameProcessor {
     yuv420p_to_x_converter(pools, YUV420PToBGRAConverter::new())
 }
 
-fn yuv420p_to_x_converter(pools: &mut PoolRegistry,
+fn yuv420p_to_x_converter(
+    pools: &mut PoolRegistry,
     converter: impl FrameProcessor + Send + 'static,
 ) -> impl FrameProcessor {
     Sequential::new()

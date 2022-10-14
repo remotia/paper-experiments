@@ -24,7 +24,6 @@ async fn main() -> std::io::Result<()> {
     // TODO: Make these fields configurable or retrieve them from the environment
     let width = 1280;
     let height = 720;
-    let display_id = 2;
 
     let mut pools = PoolRegistry::new();
 
@@ -75,7 +74,12 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(Ticker::new(33))
-                    .append(capturers::scrap_capturer(&mut pools, display_id))
+                    // .append(capturers::scrap_capturer(&mut pools, display_id))
+                    .append(capturers::y4m_capturer(
+                        &mut pools,
+                        (width, height),
+                        "videos/nerv_bunny.y4m"
+                    ))
             )
             .link(
                 Component::new()
