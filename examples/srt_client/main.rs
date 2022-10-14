@@ -1,8 +1,8 @@
-use paper_experiments::common::{decoders, color_converters};
 use paper_experiments::common::receivers::srt_receiver;
 use paper_experiments::common::renderers::beryllium_renderer;
+use paper_experiments::common::{color_converters, decoders};
 use paper_experiments::pipeline_registry::PipelineRegistry;
-use paper_experiments::{register};
+use paper_experiments::register;
 use paper_experiments::utils::{delay_controller, printer};
 
 use remotia::csv::serializer::CSVFrameDataSerializer;
@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(decoders::h264(&mut pools, &mut pipelines))
-                    .append(color_converters::yuv420p_to_bgra(&mut pools))
+                    .append(color_converters::ffmpeg_yuv420p_to_bgra(&mut pools, (width, height)))
             )
             .link(
                 Component::new()
@@ -80,7 +80,7 @@ fn logger() -> impl FrameProcessor {
                 .log("capture_timestamp")
                 .log("receive_idle_time")
                 .log("decode_idle_time")
-                .log("rgba_conversion_idle_time")
+                .log("rgba_conversion_idle_time"),
         )
         .append(
             CSVFrameDataSerializer::new("stats/client/processing.csv")
