@@ -29,6 +29,8 @@ itertools = "0.10.5"
 
 remotia-ffmpeg-codecs = { path = "../remotia-ffmpeg-codecs/" }
 remotia-srt = { path = "../remotia-srt/" }
+yuv_utils = { path = "../../yuv_utils" }
+
 clap = { version = "4.0.15", features = ["derive"] }
 
 [dependencies.remotia]

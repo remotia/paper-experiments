@@ -1160,6 +1160,7 @@ dependencies = [
  "tokio",
  "toml",
  "y4m",
+ "yuv_utils",
 ]
 
 [[package]]
@@ -2278,6 +2279,14 @@ name = "y4m"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a72a9921af8237fe25097a1ae31c92a05c1d39b2454653ad48f2f407cf7a0dae"
+
+[[package]]
+name = "yuv_utils"
+version = "0.1.0"
+dependencies = [
+ "itertools",
+ "rayon",
+]
 
 [[package]]
 name = "zstring"
