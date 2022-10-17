@@ -1,7 +1,7 @@
 use std::{cell::Cell, sync::Arc};
 
 use async_trait::async_trait;
-use itertools::{Itertools, izip};
+use itertools::{izip, Itertools};
 use rayon::prelude::*;
 use remotia::{traits::FrameProcessor, types::FrameData};
 use tokio::sync::Mutex;
@@ -50,13 +50,13 @@ impl FrameProcessor for RGBAToYUV420PConverter {
     }
 }
 
-struct ConversionContext {
-}
+struct ConversionContext {}
+
+type RGBAPixel<'a> = (&'a u8, &'a u8, &'a u8, &'a u8);
 
 impl ConversionContext {
     pub fn new(width: u32, height: u32) -> Self {
-        Self {
-        }
+        Self {}
     }
 
     pub fn bgra_to_yuv_separate(
@@ -70,21 +70,15 @@ impl ConversionContext {
         u_pixels.fill(0);
         v_pixels.fill(0);
 
-        let bgra_iter = bgra_pixels.iter().tuples::<(&u8, &u8, &u8, &u8)>();
-        let y_iter = y_pixels.iter_mut();
-        let u_iter = u_pixels.iter_mut();
-        let v_iter = v_pixels.iter_mut();
-        let yuv_iter = izip!(y_iter, u_iter, v_iter);
+        let bgra_iter = bgra_pixels.iter().tuples::<RGBAPixel>();
 
-        bgra_iter
-            .zip(yuv_iter)
-            .for_each(|((b, g, r, _), (y_pixel, u_pixel, v_pixel))| {
-                let (y, u, v) = bgr_to_yuv_f32(*b, *g, *r);
+        bgra_iter.enumerate().for_each(|(i, (b, g, r, _))| {
+            let (y, u, v) = bgr_to_yuv_f32(*b, *g, *r);
 
-                *y_pixel = y as u8;
-                *u_pixel += u as u8 / 4;
-                *v_pixel += v as u8 / 4;
-            });
+            y_pixels[i] = y as u8;
+            u_pixels[i / 4] += u as u8 / 4;
+            v_pixels[i / 4] += v as u8 / 4;
+        });
     }
 }
 
@@ -102,7 +96,7 @@ pub fn bgr_to_yuv_f32(b: u8, g: u8, r: u8) -> (f32, f32, f32) {
 
 #[cfg(test)]
 mod tests {
-    use test::Bencher;
+    use test::{black_box, Bencher};
 
     use super::ConversionContext;
 
@@ -111,12 +105,12 @@ mod tests {
         let width = 1280;
         let height = 720;
 
-        let mut context = ConversionContext::new(width as u32, height as u32);
+        let mut context = black_box(ConversionContext::new(width as u32, height as u32));
 
-        let bgra_pixels = vec![0u8; width * height * 4];
-        let mut y_pixels = vec![0u8; width * height];
-        let mut u_pixels = vec![0u8; (width * height) / 4];
-        let mut v_pixels = vec![0u8; (width * height) / 4];
+        let bgra_pixels = black_box(vec![0u8; width * height * 4]);
+        let mut y_pixels = black_box(vec![0u8; width * height]);
+        let mut u_pixels = black_box(vec![0u8; (width * height) / 4]);
+        let mut v_pixels = black_box(vec![0u8; (width * height) / 4]);
 
         bencher.iter(|| {
             context.bgra_to_yuv_separate(&bgra_pixels, &mut y_pixels, &mut u_pixels, &mut v_pixels);
