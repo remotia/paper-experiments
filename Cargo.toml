@@ -15,6 +15,8 @@ scrap = "0.5.0"
 env_logger = "0.9.0"
 log = "0.4.14"
 y4m = "0.7.0"
+toml = "0.5.9"
+serde = "1.0.137"
 
 # remotia = { git = "https://github.com/remotia/remotia", branch = "develop" }
 # remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "master" }
@@ -22,6 +24,7 @@ y4m = "0.7.0"
 
 remotia-ffmpeg-codecs = { path = "../remotia-ffmpeg-codecs/" }
 remotia-srt = { path = "../remotia-srt/" }
+clap = { version = "4.0.15", features = ["derive"] }
 
 [dependencies.remotia]
 path = "../remotia/"

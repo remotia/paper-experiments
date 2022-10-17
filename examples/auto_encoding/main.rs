@@ -17,21 +17,25 @@ use remotia::{
     processors::containers::sequential::Sequential,
 };
 
+mod config;
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
+    let config = config::load_config();
 
     // TODO: Make these fields configurable or retrieve them from the environment
-    let width = 1280;
-    let height = 720;
+    let width = config.width;
+    let height = config.height;
+    let video_path = &config.video_file_path;
 
     let mut pools = PoolRegistry::new();
 
-    pools.register("raw_frame_buffer", 24, width * height * 4);
-    pools.register("y_channel_buffer", 8, width * height);
-    pools.register("cr_channel_buffer", 8, (width * height) / 4);
-    pools.register("cb_channel_buffer", 8, (width * height) / 4);
-    pools.register("encoded_frame_buffer", 24, width * height * 4);
+    pools.register("raw_frame_buffer", 24, (width * height * 4) as usize);
+    pools.register("y_channel_buffer", 8, (width * height) as usize);
+    pools.register("cr_channel_buffer", 8, ((width * height) / 4) as usize);
+    pools.register("cb_channel_buffer", 8, ((width * height) / 4) as usize);
+    pools.register("encoded_frame_buffer", 24, (width * height * 4) as usize);
 
     let width = width as u32;
     let height = height as u32;
@@ -77,7 +81,7 @@ async fn main() -> std::io::Result<()> {
                     .append(capturers::y4m_capturer(
                         &mut pools,
                         (width, height),
-                        "videos/nerv_bunny.y4m"
+                        video_path
                     ))
             )
             .link(
