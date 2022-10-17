@@ -1,10 +1,10 @@
+use std::{cell::Cell, sync::Arc};
+
 use async_trait::async_trait;
-use itertools::{izip, zip};
-use rayon::{
-    iter::{IntoParallelIterator, ParallelIterator},
-    prelude::{IndexedParallelIterator, IntoParallelRefMutIterator},
-};
+use itertools::{Itertools, izip};
+use rayon::prelude::*;
 use remotia::{traits::FrameProcessor, types::FrameData};
+use tokio::sync::Mutex;
 
 pub struct RGBAToYUV420PConverter {
     context: ConversionContext,
@@ -34,9 +34,6 @@ impl FrameProcessor for RGBAToYUV420PConverter {
             .extract_writable_buffer("cr_channel_buffer")
             .unwrap();
 
-        cb_channel_buffer.fill(0);
-        cr_channel_buffer.fill(0);
-
         self.context.bgra_to_yuv_separate(
             &raw_frame_buffer,
             &mut y_channel_buffer,
@@ -54,15 +51,11 @@ impl FrameProcessor for RGBAToYUV420PConverter {
 }
 
 struct ConversionContext {
-    full_u_pixels: Vec<u8>,
-    full_v_pixels: Vec<u8>,
 }
 
 impl ConversionContext {
     pub fn new(width: u32, height: u32) -> Self {
         Self {
-            full_u_pixels: vec![0u8; (width * height) as usize],
-            full_v_pixels: vec![0u8; (width * height) as usize],
         }
     }
 
@@ -73,30 +66,25 @@ impl ConversionContext {
         u_pixels: &mut [u8],
         v_pixels: &mut [u8],
     ) {
-        let pixels_count = bgra_pixels.len() / 4;
+        y_pixels.fill(0);
+        u_pixels.fill(0);
+        v_pixels.fill(0);
 
-        (0..pixels_count).into_iter().for_each(|i| {
-            let (b, g, r) = (bgra_pixels[i * 4], bgra_pixels[i * 4 + 1], bgra_pixels[i * 4 + 2]);
+        let bgra_iter = bgra_pixels.iter().tuples::<(&u8, &u8, &u8, &u8)>();
+        let y_iter = y_pixels.iter_mut();
+        let u_iter = u_pixels.iter_mut();
+        let v_iter = v_pixels.iter_mut();
+        let yuv_iter = izip!(y_iter, u_iter, v_iter);
 
-            let (y, u, v) = bgr_to_yuv_f32(b, g, r);
+        bgra_iter
+            .zip(yuv_iter)
+            .for_each(|((b, g, r, _), (y_pixel, u_pixel, v_pixel))| {
+                let (y, u, v) = bgr_to_yuv_f32(*b, *g, *r);
 
-            y_pixels[i] = y as u8;
-            self.full_u_pixels[i] = u as u8;
-            self.full_v_pixels[i] = v as u8;
-        });
-
-        let chroma_pixels_count = pixels_count / 4;
-        (0..chroma_pixels_count).into_iter().for_each(|i| {
-            u_pixels[i] = self.full_u_pixels[i * 4] / 4
-                + self.full_u_pixels[i * 4 + 1] / 4
-                + self.full_u_pixels[i * 4 + 2] / 4
-                + self.full_u_pixels[i * 4 + 3] / 4;
-
-            v_pixels[i] = self.full_v_pixels[i * 4] / 4
-                + self.full_v_pixels[i * 4 + 1] / 4
-                + self.full_v_pixels[i * 4 + 2] / 4
-                + self.full_v_pixels[i * 4 + 3] / 4
-        });
+                *y_pixel = y as u8;
+                *u_pixel += u as u8 / 4;
+                *v_pixel += v as u8 / 4;
+            });
     }
 }
 
