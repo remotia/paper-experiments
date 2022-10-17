@@ -3,16 +3,15 @@ use remotia::{
     processors::containers::sequential::Sequential,
     time::{add::TimestampAdder, diff::TimestampDiffCalculator},
     traits::FrameProcessor,
-    yuv420p::encoder::RGBAToYUV420PConverter,
 };
 
-use crate::{time_diff, time_start, yuv_to_rgba::YUV420PToRGBAConverter};
+use crate::{time_diff, time_start, yuv_to_rgba::YUV420PToRGBAConverter, rgba_to_yuv::RGBAToYUV420PConverter};
 
 pub use self::rgba_to_yuv420p_converter as rgba_to_yuv420p;
 pub use self::ffmpeg_yuv420p_to_bgra_converter as ffmpeg_yuv420p_to_bgra;
 pub use self::y4m_yuv420p_to_rgba_converter as y4m_yuv420p_to_rgba;
 
-pub fn rgba_to_yuv420p_converter(pools: &mut PoolRegistry) -> impl FrameProcessor {
+pub fn rgba_to_yuv420p_converter(pools: &mut PoolRegistry, (width, height): (u32, u32)) -> impl FrameProcessor {
     Sequential::new()
         .append(TimestampDiffCalculator::new(
             "capture_timestamp",
@@ -24,7 +23,7 @@ pub fn rgba_to_yuv420p_converter(pools: &mut PoolRegistry) -> impl FrameProcesso
         .append(pools.get("cr_channel_buffer").borrower())
         .append(time_diff!("yuv420p_conversion_idle"))
         .append(time_start!("yuv420p_conversion_processing"))
-        .append(RGBAToYUV420PConverter::new())
+        .append(RGBAToYUV420PConverter::new(width, height))
         .append(pools.get("raw_frame_buffer").redeemer())
         .append(time_diff!("yuv420p_conversion_processing"))
 }

@@ -42,8 +42,7 @@ impl FrameProcessor for Y4MLoader {
 
         let frame = self.stream.read_frame();
         if frame.is_err() {
-            debug!("No more frames to extract, looping");
-            self.stream = y4m::decode(File::open(&self.path).unwrap()).unwrap();
+            debug!("No more frames to extract");
             frame_data.set_drop_reason(Some(DropReason::EmptyFrame));
             return Some(frame_data);
         }

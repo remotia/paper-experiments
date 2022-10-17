@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use log::error;
 use paper_experiments::common::capturers;
 use paper_experiments::common::color_converters;
 use paper_experiments::common::decoders;
@@ -7,7 +10,10 @@ use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
 use paper_experiments::utils::{delay_controller, printer};
 
+use remotia::async_func;
 use remotia::csv::serializer::CSVFrameDataSerializer;
+use remotia::error::DropReason;
+use remotia::processors::async_functional::AsyncFunction;
 use remotia::processors::switch::Switch;
 use remotia::processors::ticker::Ticker;
 use remotia::traits::FrameProcessor;
@@ -39,6 +45,18 @@ async fn main() -> std::io::Result<()> {
 
     let width = width as u32;
     let height = height as u32;
+
+    let capture_stopper = AsyncFunction::new(|frame_data| {
+        async_func!(async move {
+            if Some(DropReason::EmptyFrame) == frame_data.get_drop_reason() {
+                error!("No more frames, 'safe' sleep");
+                tokio::time::sleep(Duration::from_secs(3)).await;
+                panic!("Terminating");
+            }
+
+            Some(frame_data)
+        })
+    });
 
     let mut pipelines = PipelineRegistry::new();
 
@@ -78,16 +96,13 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(Ticker::new(33))
-                    .append(capturers::y4m_capturer(
-                        &mut pools,
-                        (width, height),
-                        video_path
-                    ))
+                    .append(capturers::y4m_capturer(&mut pools, (width, height), video_path))
+                    .append(capture_stopper)
             )
             .link(
                 Component::new()
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
-                    .append(color_converters::rgba_to_yuv420p(&mut pools))
+                    .append(color_converters::rgba_to_yuv420p(&mut pools, (width, height)))
                     .append(encoders::x264(&mut pools, width, height))
                     .append(Switch::new(pipelines.get_mut("decoding")))
             )

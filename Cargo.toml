@@ -18,6 +18,9 @@ y4m = "0.7.0"
 toml = "0.5.9"
 serde = "1.0.137"
 
+rayon = "1.5.3"
+itertools = "0.10.5"
+
 # remotia = { git = "https://github.com/remotia/remotia", branch = "develop" }
 # remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "master" }
 # remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master" }
