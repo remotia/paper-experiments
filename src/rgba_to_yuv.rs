@@ -70,14 +70,40 @@ impl ConversionContext {
         u_pixels.fill(0);
         v_pixels.fill(0);
 
-        let bgra_iter = bgra_pixels.iter().tuples::<RGBAPixel>();
+        let bgra_iter = bgra_pixels
+            .iter()
+            .tuples::<RGBAPixel>()
+            .tuples::<(RGBAPixel, RGBAPixel, RGBAPixel, RGBAPixel)>();
 
-        bgra_iter.enumerate().for_each(|(i, (b, g, r, _))| {
-            let (y, u, v) = bgr_to_yuv_f32(*b, *g, *r);
+        let y_iter = y_pixels
+            .iter_mut()
+            .tuples::<(&mut u8, &mut u8, &mut u8, &mut u8)>();
+        let u_iter = u_pixels.iter_mut();
+        let v_iter = v_pixels.iter_mut();
 
-            y_pixels[i] = y as u8;
-            u_pixels[i / 4] += u as u8 / 4;
-            v_pixels[i / 4] += v as u8 / 4;
+        let uv_iter = izip!(y_iter, u_iter, v_iter);
+        let iter = bgra_iter.zip(uv_iter);
+
+        iter.for_each(|(bgra_block, yuv_block)| {
+            let (bgra0, bgra1, bgra2, bgra3) = bgra_block;
+            let ((y0_ptr, y1_ptr, y2_ptr, y3_ptr), u_ptr, v_ptr) = yuv_block;
+
+            let (y0, u0, v0) = bgr_to_yuv_f32(*bgra0.0, *bgra0.1, *bgra0.2);
+
+            let (y1, u1, v1) = bgr_to_yuv_f32(*bgra1.0, *bgra1.1, *bgra1.2);
+
+            let (y2, u2, v2) = bgr_to_yuv_f32(*bgra2.0, *bgra2.1, *bgra2.2);
+
+            let (y3, u3, v3) = bgr_to_yuv_f32(*bgra3.0, *bgra3.1, *bgra3.2);
+
+            *y0_ptr = y0 as u8;
+            *y1_ptr = y1 as u8;
+            *y2_ptr = y2 as u8;
+            *y3_ptr = y3 as u8;
+
+            *u_ptr = u0 as u8 / 4 + u1 as u8 / 4 + u2 as u8 / 4 + u3 as u8 / 4;
+
+            *v_ptr = v0 as u8 / 4 + v1 as u8 / 4 + v2 as u8 / 4 + v3 as u8 / 4;
         });
     }
 }
