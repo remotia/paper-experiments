@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use remotia::{traits::FrameProcessor, types::FrameData};
-use yuv_utils::split_parallel_for_loop::ConversionContext;
+use yuv_utils::bgra2yuv::split_parallel_for_loop::ConversionContext;
 
 pub struct RGBAToYUV420PConverter {
     context: ConversionContext,
