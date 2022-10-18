@@ -1,9 +1,9 @@
 use crate::time_diff;
 use crate::time_start;
+use crate::yuv_to_rgba::SquaredYUV420PToRGBAConverter;
 use log::debug;
 
 use crate::y4m_loader::Y4MLoader;
-use crate::yuv_to_rgba::squared::SquaredYUV420PToRGBAConverter;
 use remotia::time::add::TimestampAdder;
 use remotia::time::diff::TimestampDiffCalculator;
 use remotia::traits::FrameProcessor;

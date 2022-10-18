@@ -5,9 +5,7 @@ use remotia::{
     traits::FrameProcessor,
 };
 
-use crate::{
-    rgba_to_yuv::RGBAToYUV420PConverter, time_diff, time_start, yuv_to_rgba::{squared::SquaredYUV420PToRGBAConverter, vectorized::VectorizedYUV420PToRGBAConverter},
-};
+use crate::{rgba_to_yuv::RGBAToYUV420PConverter, time_diff, time_start, yuv_to_rgba::{SquaredYUV420PToRGBAConverter, VectorizedYUV420PToRGBAConverter}};
 
 pub use self::ffmpeg_yuv420p_to_bgra_converter as ffmpeg_yuv420p_to_bgra;
 pub use self::rgba_to_yuv420p_converter as rgba_to_yuv420p;
