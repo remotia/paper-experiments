@@ -59,7 +59,7 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
-                    .append(color_converters::rgba_to_yuv420p(&mut pools))
+                    .append(color_converters::rgba_to_yuv420p(&mut pools, (width, height)))
                     .append(encoders::x264(&mut pools, width, height))
             )
             .link(
