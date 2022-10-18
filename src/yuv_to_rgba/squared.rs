@@ -1,10 +1,9 @@
 use async_trait::async_trait;
 use log::debug;
 use remotia::{traits::FrameProcessor, types::FrameData};
-use yuv_utils::yuv2rgba::for_loop::ConversionContext;
-use yuv_utils::{PixelOffset, Indicization};
+use yuv_utils::yuv2rgba::for_loop::squared::ConversionContext;
 
-pub struct YUV420PToRGBAConverter {
+pub struct SquaredYUV420PToRGBAConverter {
     conversion_context: ConversionContext,
 
     y_buffer_id: String,
@@ -13,7 +12,7 @@ pub struct YUV420PToRGBAConverter {
     raw_frame_buffer_id: String,
 }
 
-impl YUV420PToRGBAConverter {
+impl SquaredYUV420PToRGBAConverter {
     pub fn new(width: u32, height: u32) -> Self {
         Self {
             conversion_context: ConversionContext::new(width, height),
@@ -22,16 +21,6 @@ impl YUV420PToRGBAConverter {
             v_buffer_id: "cr_channel_buffer".to_string(),
             raw_frame_buffer_id: "raw_frame_buffer".to_string(),
         }
-    }
-
-    pub fn bgra(mut self) -> Self {
-        self.conversion_context.set_pixel_offset(PixelOffset::BGRA);
-        self
-    }
-
-    pub fn vectorized_indices(mut self) -> Self {
-        self.conversion_context.set_indicization(Indicization::Vectorized);
-        self
     }
 
     pub fn y_buffer_id(mut self, y_buffer_id: &str) -> Self {
@@ -56,7 +45,7 @@ impl YUV420PToRGBAConverter {
 }
 
 #[async_trait]
-impl FrameProcessor for YUV420PToRGBAConverter {
+impl FrameProcessor for SquaredYUV420PToRGBAConverter {
     async fn process(&mut self, mut frame_data: FrameData) -> Option<FrameData> {
         debug!("Conversion from YUV420P to RGBA...");
 
@@ -87,16 +76,4 @@ impl FrameProcessor for YUV420PToRGBAConverter {
 
         Some(frame_data)
     }
-}
-
-pub fn yuv_to_bgr(y: u8, u: u8, v: u8) -> (u8, u8, u8) {
-    let y: f64 = y as f64;
-    let u: f64 = ((u as i16) - 128) as f64;
-    let v: f64 = ((v as i16) - 128) as f64;
-
-    let r = (y + v * 1.40200) as u8;
-    let g = (y + u * -0.34414 + v * -0.71414) as u8;
-    let b = (y + u * 1.77200) as u8;
-
-    (b, g, r)
 }

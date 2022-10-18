@@ -3,7 +3,7 @@ use crate::time_start;
 use log::debug;
 
 use crate::y4m_loader::Y4MLoader;
-use crate::yuv_to_rgba::YUV420PToRGBAConverter;
+use crate::yuv_to_rgba::squared::SquaredYUV420PToRGBAConverter;
 use remotia::time::add::TimestampAdder;
 use remotia::time::diff::TimestampDiffCalculator;
 use remotia::traits::FrameProcessor;
@@ -36,7 +36,7 @@ pub fn y4m_capturer(pools: &mut PoolRegistry, (width, height): (u32, u32), file_
         .append(time_start!("capture_processing"))
         .append(TimestampAdder::new("capture_timestamp"))
         .append(Y4MLoader::new(file_path))
-        .append(YUV420PToRGBAConverter::new(width, height))
+        .append(SquaredYUV420PToRGBAConverter::new(width, height))
         .append(pools.get("y_channel_buffer").redeemer())
         .append(pools.get("cb_channel_buffer").redeemer())
         .append(pools.get("cr_channel_buffer").redeemer())

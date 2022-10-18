@@ -5,10 +5,12 @@ use remotia::{
     traits::FrameProcessor,
 };
 
-use crate::{time_diff, time_start, yuv_to_rgba::YUV420PToRGBAConverter, rgba_to_yuv::RGBAToYUV420PConverter};
+use crate::{
+    rgba_to_yuv::RGBAToYUV420PConverter, time_diff, time_start, yuv_to_rgba::{squared::SquaredYUV420PToRGBAConverter, vectorized::VectorizedYUV420PToRGBAConverter},
+};
 
-pub use self::rgba_to_yuv420p_converter as rgba_to_yuv420p;
 pub use self::ffmpeg_yuv420p_to_bgra_converter as ffmpeg_yuv420p_to_bgra;
+pub use self::rgba_to_yuv420p_converter as rgba_to_yuv420p;
 pub use self::y4m_yuv420p_to_rgba_converter as y4m_yuv420p_to_rgba;
 
 pub fn rgba_to_yuv420p_converter(pools: &mut PoolRegistry, (width, height): (u32, u32)) -> impl FrameProcessor {
@@ -29,16 +31,11 @@ pub fn rgba_to_yuv420p_converter(pools: &mut PoolRegistry, (width, height): (u32
 }
 
 pub fn y4m_yuv420p_to_rgba_converter(pools: &mut PoolRegistry, (width, height): (u32, u32)) -> impl FrameProcessor {
-    yuv420p_to_x_converter(pools, YUV420PToRGBAConverter::new(width, height))
+    yuv420p_to_x_converter(pools, SquaredYUV420PToRGBAConverter::new(width, height))
 }
 
 pub fn ffmpeg_yuv420p_to_bgra_converter(pools: &mut PoolRegistry, (width, height): (u32, u32)) -> impl FrameProcessor {
-    yuv420p_to_x_converter(
-        pools,
-        YUV420PToRGBAConverter::new(width, height)
-            .bgra()
-            .vectorized_indices(),
-    )
+    yuv420p_to_x_converter(pools, VectorizedYUV420PToRGBAConverter::new(width, height))
 }
 
 fn yuv420p_to_x_converter(
