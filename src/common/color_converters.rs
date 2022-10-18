@@ -5,7 +5,11 @@ use remotia::{
     traits::FrameProcessor,
 };
 
-use crate::{rgba_to_yuv::RGBAToYUV420PConverter, time_diff, time_start, yuv_to_rgba::{SquaredYUV420PToRGBAConverter, VectorizedYUV420PToRGBAConverter}};
+use crate::{
+    rgba_to_yuv::RGBAToYUV420PConverter,
+    time_diff, time_start,
+    yuv_to_rgba::{SquaredYUV420PToRGBAConverter, VectorizedYUV420PToBGRAConverter},
+};
 
 pub use self::ffmpeg_yuv420p_to_bgra_converter as ffmpeg_yuv420p_to_bgra;
 pub use self::rgba_to_yuv420p_converter as rgba_to_yuv420p;
@@ -33,7 +37,7 @@ pub fn y4m_yuv420p_to_rgba_converter(pools: &mut PoolRegistry, (width, height): 
 }
 
 pub fn ffmpeg_yuv420p_to_bgra_converter(pools: &mut PoolRegistry, (width, height): (u32, u32)) -> impl FrameProcessor {
-    yuv420p_to_x_converter(pools, VectorizedYUV420PToRGBAConverter::new(width, height))
+    yuv420p_to_x_converter(pools, VectorizedYUV420PToBGRAConverter::new(width, height))
 }
 
 fn yuv420p_to_x_converter(

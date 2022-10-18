@@ -1,13 +1,13 @@
 use async_trait::async_trait;
 use log::debug;
 use remotia::{traits::FrameProcessor, types::FrameData};
-use yuv_utils::yuv2rgba::{
-    for_loop::{squared, vectorized},
-    YUVToRGBAConversionContext,
-};
+use yuv_utils::from_yuv::*;
 
-pub type VectorizedYUV420PToRGBAConverter = ConverterProcessor<vectorized::ConversionContext>;
-pub type SquaredYUV420PToRGBAConverter = ConverterProcessor<squared::ConversionContext>;
+pub type VectorizedYUV420PToRGBAConverter = ConverterProcessor<yuv2rgba::default::vectorized::ConversionContext>;
+pub type SquaredYUV420PToRGBAConverter = ConverterProcessor<yuv2rgba::default::squared::ConversionContext>;
+
+pub type VectorizedYUV420PToBGRAConverter = ConverterProcessor<yuv2bgra::default::vectorized::ConversionContext>;
+pub type SquaredYUV420PToBGRAConverter = ConverterProcessor<yuv2bgra::default::squared::ConversionContext>;
 
 pub struct ConverterProcessor<C: YUVToRGBAConversionContext> {
     conversion_context: C,
