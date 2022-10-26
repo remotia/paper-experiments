@@ -4,7 +4,7 @@ use remotia::{traits::FrameProcessor, types::FrameData};
 use yuv_utils::from_yuv::*;
 
 pub type VectorizedYUV420PToRGBAConverter = ConverterProcessor<yuv2rgba::default::vectorized::ConversionContext>;
-pub type SquaredYUV420PToRGBAConverter = ConverterProcessor<yuv2rgba::default::squared::ConversionContext>;
+pub type SquaredYUV420PToRGBAConverter = ConverterProcessor<yuv2rgba::chunked_indices_loop::squared::ConversionContext>;
 
 pub type VectorizedYUV420PToBGRAConverter = ConverterProcessor<yuv2bgra::default::vectorized::ConversionContext>;
 pub type SquaredYUV420PToBGRAConverter = ConverterProcessor<yuv2bgra::default::squared::ConversionContext>;
