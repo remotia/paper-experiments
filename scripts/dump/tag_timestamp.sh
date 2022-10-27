@@ -9,6 +9,5 @@ do
     pre=$(echo $full_ts | cut -c1-10)
     milliseconds=$(echo $full_ts | cut -c11-13)
     datetime=$(date -d @$pre.$milliseconds +"%m/%d/%Y %H:%M:%S.%3N")
-    echo $datetime
     touch --date "$datetime" $file
 done

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -19,6 +18,7 @@ use remotia::error::DropReason;
 use remotia::frame_dump::RawFrameDumper;
 use remotia::processors::async_functional::AsyncFunction;
 use remotia::processors::clone_switch::CloneSwitch;
+use remotia::processors::functional::Function;
 use remotia::processors::switch::Switch;
 use remotia::processors::ticker::Ticker;
 use remotia::traits::FrameProcessor;
@@ -27,7 +27,6 @@ use remotia::{
     pool_registry::PoolRegistry,
     processors::containers::sequential::Sequential,
 };
-use remotia_ffmpeg_codecs::encoders::options::Options;
 
 mod config;
 
@@ -175,5 +174,10 @@ fn logger() -> impl FrameProcessor {
                 .log("decode_delay")
                 .log("rgba_conversion_delay")
                 .log("frame_delay"),
+        )
+        .append(
+            CSVFrameDataSerializer::new("results/stats/codec.csv")
+                .log("capture_timestamp")
+                .log("encoded_size")
         )
 }

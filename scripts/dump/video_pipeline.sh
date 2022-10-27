@@ -1,3 +1,13 @@
-FOLDER=$1
-OUTPUT=$2
-ffmpeg -f image2 -ts_from_file 2 -pattern_type glob -i "$1/*.png" -c:v libx264 -qp 0 "$2"
+rm -rf results/compressed_dump/
+mkdir -p results/compressed_dump/
+ 
+./scripts/compress_all.sh results/dump/captured/ results/compressed_dump/captured/ 1280 720
+./scripts/compress_all.sh results/dump/rendered/ results/compressed_dump/rendered/ 1280 720
+
+./scripts/dump/tag_timestamp.sh  results/compressed_dump/captured/
+./scripts/dump/tag_timestamp.sh  results/compressed_dump/rendered/
+
+rm -rf results/videos/
+mkdir -p results/videos/
+./scripts/dump/generate_video.sh  results/compressed_dump/captured/ results/videos/captured.y4m
+./scripts/dump/generate_video.sh  results/compressed_dump/rendered/ results/videos/rendered.y4m
