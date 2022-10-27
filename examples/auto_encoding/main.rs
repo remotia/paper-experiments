@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::time::Duration;
 
 use log::error;
@@ -13,6 +14,7 @@ use paper_experiments::utils::{delay_controller, printer};
 use remotia::async_func;
 use remotia::csv::serializer::CSVFrameDataSerializer;
 use remotia::error::DropReason;
+use remotia::frame_dump::RawFrameDumper;
 use remotia::processors::async_functional::AsyncFunction;
 use remotia::processors::switch::Switch;
 use remotia::processors::ticker::Ticker;
@@ -84,6 +86,7 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
+                    .append(RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/rendered/")))
                     .append(beryllium_renderer(&mut pools, width, height))
                     .append(logger())
             )
@@ -102,6 +105,7 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
+                    .append(RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/captured/")))
                     .append(color_converters::rgba_to_yuv420p(&mut pools, (width, height)))
                     .append(encoders::x264(&mut pools, width, height))
                     .append(Switch::new(pipelines.get_mut("decoding")))
@@ -116,7 +120,7 @@ async fn main() -> std::io::Result<()> {
 fn logger() -> impl FrameProcessor {
     Sequential::new()
         .append(
-            CSVFrameDataSerializer::new("stats/idle.csv")
+            CSVFrameDataSerializer::new("results/stats/idle.csv")
                 .log("capture_timestamp")
                 .log("capture_idle_time")
                 .log("yuv420p_conversion_idle_time")
@@ -125,7 +129,7 @@ fn logger() -> impl FrameProcessor {
                 .log("rgba_conversion_idle_time"),
         )
         .append(
-            CSVFrameDataSerializer::new("stats/processing.csv")
+            CSVFrameDataSerializer::new("results/stats/processing.csv")
                 .log("capture_timestamp")
                 .log("capture_processing_time")
                 .log("yuv420p_conversion_processing_time")
@@ -135,7 +139,7 @@ fn logger() -> impl FrameProcessor {
                 .log("render_processing_time"),
         )
         .append(
-            CSVFrameDataSerializer::new("stats/delay.csv")
+            CSVFrameDataSerializer::new("results/stats/delay.csv")
                 .log("capture_timestamp")
                 .log("yuv420p_conversion_delay")
                 .log("encode_delay")
