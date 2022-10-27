@@ -10,6 +10,7 @@ use paper_experiments::common::encoders;
 use paper_experiments::common::renderers::beryllium_renderer;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
+use paper_experiments::utils::build_encoder_options;
 use paper_experiments::utils::{delay_controller, printer};
 
 use remotia::async_func;
@@ -143,14 +144,6 @@ async fn main() -> std::io::Result<()> {
     pipelines.run().await;
 
     Ok(())
-}
-
-fn build_encoder_options(options_map: HashMap<String, String>) -> Options {
-    let mut options = Options::new();
-    for (key, value) in options_map {
-        options = options.set(&key, &value);
-    }
-    options
 }
 
 fn logger() -> impl FrameProcessor {

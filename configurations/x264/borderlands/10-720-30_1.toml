@@ -1,6 +1,0 @@
-width = 1280
-height = 720
-video_file_path = "videos/borderlands/Borderlands2_10-720-30_1_video.y4m"
-
-[encoder_options]
-crf = "35"

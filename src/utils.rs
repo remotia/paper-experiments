@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use log::debug;
 use remotia::{
     pipeline::ascode::AscodePipeline,
@@ -8,6 +10,7 @@ use remotia::{
     time::diff::TimestampDiffCalculator,
     traits::FrameProcessor,
 };
+use remotia_ffmpeg_codecs::encoders::options::Options;
 
 pub fn printer() -> impl FrameProcessor {
     Function::new(|frame_data| {
@@ -62,3 +65,12 @@ macro_rules! buffer_peek {
         })
     };
 }
+
+pub fn build_encoder_options(options_map: HashMap<String, String>) -> Options {
+    let mut options = Options::new();
+    for (key, value) in options_map {
+        options = options.set(&key, &value);
+    }
+    options
+}
+
