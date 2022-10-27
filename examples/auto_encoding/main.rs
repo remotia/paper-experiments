@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -25,6 +26,7 @@ use remotia::{
     pool_registry::PoolRegistry,
     processors::containers::sequential::Sequential,
 };
+use remotia_ffmpeg_codecs::encoders::options::Options;
 
 mod config;
 
@@ -128,7 +130,12 @@ async fn main() -> std::io::Result<()> {
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
                     .append(CloneSwitch::new(pipelines.get_mut("captured_dump")))
                     .append(color_converters::rgba_to_yuv420p(&mut pools, (width, height)))
-                    .append(encoders::x264(&mut pools, width, height))
+                    .append(encoders::x264(
+                        &mut pools,
+                        width,
+                        height,
+                        build_encoder_options(config.encoder_options.clone())
+                    ))
                     .append(Switch::new(pipelines.get_mut("decoding")))
             )
     );
@@ -136,6 +143,14 @@ async fn main() -> std::io::Result<()> {
     pipelines.run().await;
 
     Ok(())
+}
+
+fn build_encoder_options(options_map: HashMap<String, String>) -> Options {
+    let mut options = Options::new();
+    for (key, value) in options_map {
+        options = options.set(&key, &value);
+    }
+    options
 }
 
 fn logger() -> impl FrameProcessor {

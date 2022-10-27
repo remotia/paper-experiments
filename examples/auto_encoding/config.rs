@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use clap::Parser;
 use serde::Deserialize;
 
@@ -13,6 +15,7 @@ pub struct Configuration {
     pub video_file_path: String,
     pub width: u32,
     pub height: u32,
+    pub encoder_options: HashMap<String, String> 
 }
 
 pub fn load_config() -> Configuration {
