@@ -16,6 +16,7 @@ use remotia::csv::serializer::CSVFrameDataSerializer;
 use remotia::error::DropReason;
 use remotia::frame_dump::RawFrameDumper;
 use remotia::processors::async_functional::AsyncFunction;
+use remotia::processors::clone_switch::CloneSwitch;
 use remotia::processors::switch::Switch;
 use remotia::processors::ticker::Ticker;
 use remotia::traits::FrameProcessor;
@@ -64,6 +65,26 @@ async fn main() -> std::io::Result<()> {
 
     register!(
         pipelines,
+        "captured_dump",
+        AscodePipeline::singleton(Component::singleton(RawFrameDumper::new(
+            "raw_frame_buffer",
+            PathBuf::from("./results/dump/captured/")
+        )))
+        .feedable()
+    );
+
+    register!(
+        pipelines,
+        "rendered_dump",
+        AscodePipeline::singleton(Component::singleton(RawFrameDumper::new(
+            "raw_frame_buffer",
+            PathBuf::from("./results/dump/rendered/")
+        )))
+        .feedable()
+    );
+
+    register!(
+        pipelines,
         "error",
         AscodePipeline::singleton(
             Component::new()
@@ -86,7 +107,7 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
-                    .append(RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/rendered/")))
+                    .append(CloneSwitch::new(pipelines.get_mut("rendered_dump")))
                     .append(beryllium_renderer(&mut pools, width, height))
                     .append(logger())
             )
@@ -105,7 +126,7 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
-                    .append(RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/captured/")))
+                    .append(CloneSwitch::new(pipelines.get_mut("captured_dump")))
                     .append(color_converters::rgba_to_yuv420p(&mut pools, (width, height)))
                     .append(encoders::x264(&mut pools, width, height))
                     .append(Switch::new(pipelines.get_mut("decoding")))

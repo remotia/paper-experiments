@@ -3,4 +3,5 @@ CONFIG_PATH=$2
 
 export RUSTFLAGS="-C target-cpu=native"
 
+rm -rf results/
 cargo run --release --example $EXAMPLE_ID -- --config-file-path $CONFIG_PATH
