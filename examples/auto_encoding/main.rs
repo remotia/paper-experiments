@@ -87,11 +87,17 @@ async fn main() -> std::io::Result<()> {
 
     register!(
         pipelines,
+        "logging",
+        AscodePipeline::singleton(Component::singleton(logger())).feedable()
+    );
+
+    register!(
+        pipelines,
         "error",
         AscodePipeline::singleton(
             Component::new()
                 .append(pools.mass_redeemer(true))
-                .append(printer()),
+                .append(Switch::new(pipelines.get_mut("logging")))
         )
         .feedable()
     );
@@ -111,7 +117,7 @@ async fn main() -> std::io::Result<()> {
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
                     .append(CloneSwitch::new(pipelines.get_mut("rendered_dump")))
                     .append(beryllium_renderer(&mut pools, width, height))
-                    .append(logger())
+                    .append(Switch::new(pipelines.get_mut("logging")))
             )
     );
 
@@ -168,6 +174,7 @@ fn logger() -> impl FrameProcessor {
         )
         .append(
             CSVFrameDataSerializer::new("results/stats/delay.csv")
+                .log_drop_reason()
                 .log("capture_timestamp")
                 .log("yuv420p_conversion_delay")
                 .log("encode_delay")
@@ -178,6 +185,6 @@ fn logger() -> impl FrameProcessor {
         .append(
             CSVFrameDataSerializer::new("results/stats/codec.csv")
                 .log("capture_timestamp")
-                .log("encoded_size")
+                .log("encoded_size"),
         )
 }
