@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(decoders::h264(&mut pools, &mut pipelines))
-                    .append(color_converters::ffmpeg_yuv420p_to_bgra(&mut pools, (width, height)))
+                    .append(color_converters::ffmpeg_yuv420p_to_rgba(&mut pools, (width, height)))
             )
             .link(
                 Component::new()
