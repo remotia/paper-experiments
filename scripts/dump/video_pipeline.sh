@@ -10,4 +10,6 @@ mkdir -p results/compressed_dump/
 rm -rf results/videos/
 mkdir -p results/videos/
 ./scripts/dump/generate_video.sh  results/compressed_dump/captured/ results/videos/captured.y4m
+rm -rf results/compressed_dump/captured
 ./scripts/dump/generate_video.sh  results/compressed_dump/rendered/ results/videos/rendered.y4m
+rm -rf results/compressed_dump/rendered
