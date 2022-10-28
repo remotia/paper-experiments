@@ -1,7 +1,7 @@
 use remotia::{
     pool_registry::PoolRegistry,
     processors::containers::sequential::Sequential,
-    time::{add::TimestampAdder, diff::TimestampDiffCalculator},
+    time::{diff::TimestampDiffCalculator},
     traits::FrameProcessor,
 };
 

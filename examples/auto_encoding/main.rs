@@ -9,8 +9,10 @@ use paper_experiments::common::encoders;
 use paper_experiments::common::renderers::beryllium_renderer;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
+use paper_experiments::time_diff;
+use paper_experiments::time_start;
 use paper_experiments::utils::build_encoder_options;
-use paper_experiments::utils::{delay_controller, printer};
+use paper_experiments::utils::delay_controller;
 
 use remotia::async_func;
 use remotia::csv::serializer::CSVFrameDataSerializer;
@@ -18,7 +20,6 @@ use remotia::error::DropReason;
 use remotia::frame_dump::RawFrameDumper;
 use remotia::processors::async_functional::AsyncFunction;
 use remotia::processors::clone_switch::CloneSwitch;
-use remotia::processors::functional::Function;
 use remotia::processors::switch::Switch;
 use remotia::processors::ticker::Ticker;
 use remotia::traits::FrameProcessor;
@@ -109,11 +110,14 @@ async fn main() -> std::io::Result<()> {
             .feedable()
             .link(
                 Component::new()
+                    .append(time_diff!("encode_transmission"))
                     .append(decoders::h264(&mut pools, &mut pipelines))
                     .append(color_converters::ffmpeg_yuv420p_to_rgba(&mut pools, (width, height)))
+                    .append(time_start!("decode_transmission"))
             )
             .link(
                 Component::new()
+                    .append(time_diff!("decode_transmission"))
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
                     .append(CloneSwitch::new(pipelines.get_mut("rendered_dump")))
                     .append(beryllium_renderer(&mut pools, width, height))
@@ -130,9 +134,11 @@ async fn main() -> std::io::Result<()> {
                     .append(Ticker::new(33))
                     .append(capturers::y4m_capturer(&mut pools, (width, height), video_path))
                     .append(capture_stopper)
+                    .append(time_start!("capture_transmission"))
             )
             .link(
                 Component::new()
+                    .append(time_diff!("capture_transmission"))
                     .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
                     .append(CloneSwitch::new(pipelines.get_mut("captured_dump")))
                     .append(color_converters::rgba_to_yuv420p(&mut pools, (width, height)))
@@ -142,6 +148,7 @@ async fn main() -> std::io::Result<()> {
                         height,
                         build_encoder_options(config.encoder_options.clone())
                     ))
+                    .append(time_start!("encode_transmission"))
                     .append(Switch::new(pipelines.get_mut("decoding")))
             )
     );
@@ -181,6 +188,14 @@ fn logger() -> impl FrameProcessor {
                 .log("decode_delay")
                 .log("rgba_conversion_delay")
                 .log("frame_delay"),
+        )
+        .append(
+            CSVFrameDataSerializer::new("results/stats/transmission_delay.csv")
+                .log_drop_reason()
+                .log("capture_timestamp")
+                .log("capture_transmission_time")
+                .log("encode_transmission_time")
+                .log("decode_transmission_time"),
         )
         .append(
             CSVFrameDataSerializer::new("results/stats/codec.csv")
