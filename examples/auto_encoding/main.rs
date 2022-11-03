@@ -6,7 +6,7 @@ use paper_experiments::common::capturers;
 use paper_experiments::common::color_converters;
 use paper_experiments::common::decoders;
 use paper_experiments::common::encoders;
-use paper_experiments::common::renderers::beryllium_renderer;
+use paper_experiments::common::renderers;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
 use paper_experiments::time_diff;
@@ -31,7 +31,7 @@ use remotia::{
 
 mod config;
 
-#[tokio::main]
+#[tokio::main(worker_threads = 1)]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     let config = config::load_config();
@@ -43,11 +43,11 @@ async fn main() -> std::io::Result<()> {
 
     let mut pools = PoolRegistry::new();
 
-    pools.register("raw_frame_buffer", 24, (width * height * 4) as usize);
-    pools.register("y_channel_buffer", 8, (width * height) as usize);
-    pools.register("cr_channel_buffer", 8, ((width * height) / 4) as usize);
-    pools.register("cb_channel_buffer", 8, ((width * height) / 4) as usize);
-    pools.register("encoded_frame_buffer", 24, (width * height * 4) as usize);
+    pools.register("raw_frame_buffer", 1, (width * height * 4) as usize).await;
+    pools.register("y_channel_buffer", 1, (width * height) as usize).await;
+    pools.register("cr_channel_buffer", 1, ((width * height) / 4) as usize).await;
+    pools.register("cb_channel_buffer", 1, ((width * height) / 4) as usize).await;
+    pools.register("encoded_frame_buffer", 1, (width * height * 4) as usize).await;
 
     let width = width as u32;
     let height = height as u32;
@@ -69,20 +69,18 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "captured_dump",
-        AscodePipeline::singleton(Component::singleton(RawFrameDumper::new(
-            "raw_frame_buffer",
-            PathBuf::from("./results/dump/captured/")
-        )))
+        AscodePipeline::singleton(Component::singleton(
+            RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/captured/")).extension("bgra")
+        ))
         .feedable()
     );
 
     register!(
         pipelines,
         "rendered_dump",
-        AscodePipeline::singleton(Component::singleton(RawFrameDumper::new(
-            "raw_frame_buffer",
-            PathBuf::from("./results/dump/rendered/")
-        )))
+        AscodePipeline::singleton(Component::singleton(
+            RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/rendered/")).extension("rgba")
+        ))
         .feedable()
     );
 
@@ -120,6 +118,7 @@ async fn main() -> std::io::Result<()> {
                     .append(time_diff!("decode_transmission"))
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
                     .append(CloneSwitch::new(pipelines.get_mut("rendered_dump")))
+                    .append(renderers::void_renderer(&mut pools))
                     .append(Switch::new(pipelines.get_mut("logging")))
             )
     );
@@ -130,7 +129,7 @@ async fn main() -> std::io::Result<()> {
         AscodePipeline::new()
             .link(
                 Component::new()
-                    .append(Ticker::new(33))
+                    .append(Ticker::new(1000))
                     .append(capturers::y4m_capturer(&mut pools, (width, height), video_path))
                     .append(capture_stopper)
                     .append(time_start!("capture_transmission"))
@@ -175,7 +174,7 @@ fn logger() -> impl FrameProcessor {
                 .log("yuv420p_conversion_processing_time")
                 .log("encode_processing_time")
                 .log("decode_processing_time")
-                .log("rgba_conversion_processing_time")
+                .log("rgba_conversion_processing_time"),
         )
         .append(
             CSVFrameDataSerializer::new("results/stats/delay.csv")

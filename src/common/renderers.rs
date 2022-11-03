@@ -13,3 +13,10 @@ pub fn beryllium_renderer(pools: &mut PoolRegistry, width: u32, height: u32) -> 
         .append(pools.get("raw_frame_buffer").redeemer())
         .append(time_diff!("render_processing"))
 }
+
+pub fn void_renderer(pools: &mut PoolRegistry) -> impl FrameProcessor {
+    Sequential::new()
+        .append(pools.get("raw_frame_buffer").redeemer())
+}
+
+

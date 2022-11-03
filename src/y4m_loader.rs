@@ -1,7 +1,7 @@
 use std::{fs::File, time::Duration};
 
 use async_trait::async_trait;
-use log::debug;
+use log::{debug, info};
 use remotia::{error::DropReason, traits::FrameProcessor, types::FrameData};
 use y4m::Decoder;
 
@@ -65,6 +65,8 @@ impl FrameProcessor for Y4MLoader {
             .copy_from_slice(frame.get_v_plane());
 
         self.extracted_frames += 1;
+
+        info!("Extracted {} frames", self.extracted_frames);
 
         Some(frame_data)
     }

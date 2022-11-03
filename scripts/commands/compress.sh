@@ -10,7 +10,8 @@ base=$(basename $filename)
 frame_id="${base%.*}"
 echo "Converting $filename..."
 convert -size ${width}x${height} -depth 8 \
-    -define png:compression-filter=1 \
-    -define png:compression-level=9 \
-    -define png:compression-strategy=2 \
-    "$filename" "$outputfolder/$frame_id.png"
+    -colorspace RGB \
+    -define webp:lossless=true \
+    -define webp:method=0 \
+    -define webp:threaded-level=1 \
+    "$filename" "$outputfolder/$frame_id.webp"
