@@ -120,7 +120,6 @@ async fn main() -> std::io::Result<()> {
                     .append(time_diff!("decode_transmission"))
                     .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
                     .append(CloneSwitch::new(pipelines.get_mut("rendered_dump")))
-                    .append(beryllium_renderer(&mut pools, width, height))
                     .append(Switch::new(pipelines.get_mut("logging")))
             )
     );
@@ -177,7 +176,6 @@ fn logger() -> impl FrameProcessor {
                 .log("encode_processing_time")
                 .log("decode_processing_time")
                 .log("rgba_conversion_processing_time")
-                .log("render_processing_time"),
         )
         .append(
             CSVFrameDataSerializer::new("results/stats/delay.csv")
