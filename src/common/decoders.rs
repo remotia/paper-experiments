@@ -42,7 +42,7 @@ pub fn serial_ffmpeg_decoder(
         .append(time_diff!("decode_idle"))
         .append(time_start!("decode_processing"))
         .append(decoder)
-        .append(OnErrorSwitch::new(pipelines.get_mut("error")))
+        .append(OnErrorSwitch::new(pipelines.get_mut("decode_error")))
         .append(pools.get("encoded_frame_buffer").redeemer())
         .append(time_diff!("decode_processing"))
 }

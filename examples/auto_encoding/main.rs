@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
+use config::Configuration;
 use log::error;
+use paper_experiments::buffer_leak_alert::BufferLeakAlert;
 use paper_experiments::common::capturers;
 use paper_experiments::common::color_converters;
 use paper_experiments::common::decoders;
@@ -31,7 +33,7 @@ use remotia::{
 
 mod config;
 
-#[tokio::main(worker_threads = 1)]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     let config = config::load_config();
@@ -41,39 +43,29 @@ async fn main() -> std::io::Result<()> {
     let height = config.height;
     let video_path = &config.video_file_path;
 
-    let mut pools = PoolRegistry::new();
+    let mut decode_pools = PoolRegistry::new();
 
-    pools.register("raw_frame_buffer", 1, (width * height * 4) as usize).await;
-    pools.register("y_channel_buffer", 1, (width * height) as usize).await;
-    pools.register("cr_channel_buffer", 1, ((width * height) / 4) as usize).await;
-    pools.register("cb_channel_buffer", 1, ((width * height) / 4) as usize).await;
-    pools.register("encoded_frame_buffer", 1, (width * height * 4) as usize).await;
+    decode_pools
+        .register("encoded_frame_buffer", 1, (width * height * 4) as usize)
+        .await;
+    decode_pools
+        .register("y_channel_buffer", 1, (width * height) as usize)
+        .await;
+    decode_pools
+        .register("cr_channel_buffer", 1, ((width * height) / 4) as usize)
+        .await;
+    decode_pools
+        .register("cb_channel_buffer", 1, ((width * height) / 4) as usize)
+        .await;
+    decode_pools
+        .register("raw_frame_buffer", 1, (width * height * 4) as usize)
+        .await;
 
     let width = width as u32;
     let height = height as u32;
 
-    let capture_stopper = AsyncFunction::new(|frame_data| {
-        async_func!(async move {
-            if Some(DropReason::EmptyFrame) == frame_data.get_drop_reason() {
-                error!("No more frames, 'safe' sleep");
-                tokio::time::sleep(Duration::from_secs(3)).await;
-                panic!("Terminating");
-            }
-
-            Some(frame_data)
-        })
-    });
-
     let mut pipelines = PipelineRegistry::new();
 
-    register!(
-        pipelines,
-        "captured_dump",
-        AscodePipeline::singleton(Component::singleton(
-            RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/captured/")).extension("bgra")
-        ))
-        .feedable()
-    );
 
     register!(
         pipelines,
@@ -87,15 +79,20 @@ async fn main() -> std::io::Result<()> {
     register!(
         pipelines,
         "logging",
-        AscodePipeline::singleton(Component::singleton(logger())).feedable()
+        AscodePipeline::singleton(
+            Component::new()
+                .append(logger())
+                .append(BufferLeakAlert::new())
+        )
+        .feedable()
     );
 
     register!(
         pipelines,
-        "error",
+        "decode_error",
         AscodePipeline::singleton(
             Component::new()
-                .append(pools.mass_redeemer(true))
+                .append(decode_pools.mass_redeemer(true))
                 .append(Switch::new(pipelines.get_mut("logging")))
         )
         .feedable()
@@ -109,18 +106,87 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(time_diff!("encode_transmission"))
-                    .append(decoders::h264(&mut pools, &mut pipelines))
-                    .append(color_converters::ffmpeg_yuv420p_to_rgba(&mut pools, (width, height)))
+                    .append(decoders::h264(&mut decode_pools, &mut pipelines))
+                    .append(color_converters::ffmpeg_yuv420p_to_rgba(
+                        &mut decode_pools,
+                        (width, height)
+                    ))
                     .append(time_start!("decode_transmission"))
             )
             .link(
                 Component::new()
                     .append(time_diff!("decode_transmission"))
-                    .append(delay_controller("frame_delay", 100, pipelines.get_mut("error")))
+                    .append(delay_controller(
+                        "frame_delay",
+                        10000,
+                        pipelines.get_mut("decode_error")
+                    ))
                     .append(CloneSwitch::new(pipelines.get_mut("rendered_dump")))
-                    .append(renderers::void_renderer(&mut pools))
+                    .append(renderers::void_renderer(&mut decode_pools))
                     .append(Switch::new(pipelines.get_mut("logging")))
             )
+    );
+
+    register_encoding_pipelines(config, &mut pipelines).await;
+
+    pipelines.run().await;
+
+    Ok(())
+}
+
+async fn register_encoding_pipelines(config: Configuration, pipelines: &mut PipelineRegistry) {
+    let width = config.width;
+    let height = config.height;
+    let video_path = &config.video_file_path;
+
+    let mut encode_pools = PoolRegistry::new();
+
+    let capture_stopper = AsyncFunction::new(|frame_data| {
+        async_func!(async move {
+            if Some(DropReason::EmptyFrame) == frame_data.get_drop_reason() {
+                error!("No more frames, 'safe' sleep");
+                tokio::time::sleep(Duration::from_secs(3)).await;
+                panic!("Terminating");
+            }
+
+            Some(frame_data)
+        })
+    });
+
+    encode_pools
+        .register("raw_frame_buffer", 1, (width * height * 4) as usize)
+        .await;
+    encode_pools
+        .register("y_channel_buffer", 1, (width * height) as usize)
+        .await;
+    encode_pools
+        .register("cr_channel_buffer", 1, ((width * height) / 4) as usize)
+        .await;
+    encode_pools
+        .register("cb_channel_buffer", 1, ((width * height) / 4) as usize)
+        .await;
+    encode_pools
+        .register("encoded_frame_buffer", 1, (width * height * 4) as usize)
+        .await;
+
+    register!(
+        pipelines,
+        "captured_dump",
+        AscodePipeline::singleton(Component::singleton(
+            RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/captured/")).extension("bgra")
+        ))
+        .feedable()
+    );
+
+    register!(
+        pipelines,
+        "encode_error",
+        AscodePipeline::singleton(
+            Component::new()
+                .append(encode_pools.mass_redeemer(true))
+                .append(Switch::new(pipelines.get_mut("logging")))
+        )
+        .feedable()
     );
 
     register!(
@@ -129,31 +195,32 @@ async fn main() -> std::io::Result<()> {
         AscodePipeline::new()
             .link(
                 Component::new()
-                    .append(Ticker::new(1000))
-                    .append(capturers::y4m_capturer(&mut pools, (width, height), video_path))
+                    .append(Ticker::new(33))
+                    .append(capturers::y4m_capturer(&mut encode_pools, (width, height), video_path))
                     .append(capture_stopper)
                     .append(time_start!("capture_transmission"))
             )
             .link(
                 Component::new()
                     .append(time_diff!("capture_transmission"))
-                    .append(delay_controller("pre_encode_delay", 20, pipelines.get_mut("error")))
+                    .append(delay_controller(
+                        "pre_encode_delay",
+                        20,
+                        pipelines.get_mut("encode_error")
+                    ))
                     .append(CloneSwitch::new(pipelines.get_mut("captured_dump")))
-                    .append(color_converters::rgba_to_yuv420p(&mut pools, (width, height)))
+                    .append(color_converters::rgba_to_yuv420p(&mut encode_pools, (width, height)))
                     .append(encoders::x264(
-                        &mut pools,
+                        &mut encode_pools,
                         width,
                         height,
                         build_encoder_options(config.encoder_options.clone())
                     ))
                     .append(time_start!("encode_transmission"))
-                    .append(Switch::new(pipelines.get_mut("decoding")))
+                    .append(CloneSwitch::new(pipelines.get_mut("decoding")))
+                    .append(encode_pools.get("encoded_frame_buffer").redeemer())
             )
     );
-
-    pipelines.run().await;
-
-    Ok(())
 }
 
 fn logger() -> impl FrameProcessor {
