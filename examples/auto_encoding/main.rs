@@ -8,7 +8,9 @@ use paper_experiments::common::capturers;
 use paper_experiments::common::color_converters;
 use paper_experiments::common::decoders;
 use paper_experiments::common::encoders;
+use paper_experiments::common::receivers;
 use paper_experiments::common::renderers;
+use paper_experiments::common::senders;
 use paper_experiments::pipeline_registry::PipelineRegistry;
 use paper_experiments::register;
 use paper_experiments::time_diff;
@@ -38,43 +40,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     let config = config::load_config();
 
-    // TODO: Make these fields configurable or retrieve them from the environment
-    let width = config.width;
-    let height = config.height;
-    let video_path = &config.video_file_path;
-
-    let mut decode_pools = PoolRegistry::new();
-
-    decode_pools
-        .register("encoded_frame_buffer", 1, (width * height * 4) as usize)
-        .await;
-    decode_pools
-        .register("y_channel_buffer", 1, (width * height) as usize)
-        .await;
-    decode_pools
-        .register("cr_channel_buffer", 1, ((width * height) / 4) as usize)
-        .await;
-    decode_pools
-        .register("cb_channel_buffer", 1, ((width * height) / 4) as usize)
-        .await;
-    decode_pools
-        .register("raw_frame_buffer", 1, (width * height * 4) as usize)
-        .await;
-
-    let width = width as u32;
-    let height = height as u32;
-
     let mut pipelines = PipelineRegistry::new();
-
-
-    register!(
-        pipelines,
-        "rendered_dump",
-        AscodePipeline::singleton(Component::singleton(
-            RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/rendered/")).extension("rgba")
-        ))
-        .feedable()
-    );
 
     register!(
         pipelines,
@@ -84,6 +50,50 @@ async fn main() -> std::io::Result<()> {
                 .append(logger())
                 .append(BufferLeakAlert::new())
         )
+        .feedable()
+    );
+
+    register_decoding_pipelines(config.clone(), &mut pipelines).await;
+    register_encoding_pipelines(config.clone(), &mut pipelines).await;
+
+    pipelines.run().await;
+
+    Ok(())
+}
+
+async fn register_decoding_pipelines(config: Configuration, pipelines: &mut PipelineRegistry) {
+    let width = config.width;
+    let height = config.height;
+
+    let mut decode_pools = PoolRegistry::new();
+
+    const POOLS_SIZE: usize = 8;
+
+    decode_pools
+        .register("encoded_frame_buffer", POOLS_SIZE, (width * height * 4) as usize)
+        .await;
+    decode_pools
+        .register("y_channel_buffer", POOLS_SIZE, (width * height) as usize)
+        .await;
+    decode_pools
+        .register("cr_channel_buffer", POOLS_SIZE, ((width * height) / 4) as usize)
+        .await;
+    decode_pools
+        .register("cb_channel_buffer", POOLS_SIZE, ((width * height) / 4) as usize)
+        .await;
+    decode_pools
+        .register("raw_frame_buffer", POOLS_SIZE, (width * height * 4) as usize)
+        .await;
+
+    let width = width as u32;
+    let height = height as u32;
+
+    register!(
+        pipelines,
+        "rendered_dump",
+        AscodePipeline::singleton(Component::singleton(
+            RawFrameDumper::new("raw_frame_buffer", PathBuf::from("./results/dump/rendered/")).extension("rgba")
+        ))
         .feedable()
     );
 
@@ -106,7 +116,11 @@ async fn main() -> std::io::Result<()> {
             .link(
                 Component::new()
                     .append(time_diff!("encode_transmission"))
-                    .append(decoders::h264(&mut decode_pools, &mut pipelines))
+                    .append(receivers::local(&mut decode_pools))
+            )
+            .link(
+                Component::new()
+                    .append(decoders::h264(&mut decode_pools, pipelines))
                     .append(color_converters::ffmpeg_yuv420p_to_rgba(
                         &mut decode_pools,
                         (width, height)
@@ -126,12 +140,6 @@ async fn main() -> std::io::Result<()> {
                     .append(Switch::new(pipelines.get_mut("logging")))
             )
     );
-
-    register_encoding_pipelines(config, &mut pipelines).await;
-
-    pipelines.run().await;
-
-    Ok(())
 }
 
 async fn register_encoding_pipelines(config: Configuration, pipelines: &mut PipelineRegistry) {
@@ -153,20 +161,24 @@ async fn register_encoding_pipelines(config: Configuration, pipelines: &mut Pipe
         })
     });
 
+    const POOLS_SIZE: usize = 8;
+    let frame_size = (width * height * 4) as usize;
+    let channel_size = (width * height) as usize;
+
     encode_pools
-        .register("raw_frame_buffer", 1, (width * height * 4) as usize)
+        .register("raw_frame_buffer", POOLS_SIZE, frame_size)
         .await;
     encode_pools
-        .register("y_channel_buffer", 1, (width * height) as usize)
+        .register("y_channel_buffer", POOLS_SIZE, channel_size)
         .await;
     encode_pools
-        .register("cr_channel_buffer", 1, ((width * height) / 4) as usize)
+        .register("cr_channel_buffer", POOLS_SIZE, channel_size / 4)
         .await;
     encode_pools
-        .register("cb_channel_buffer", 1, ((width * height) / 4) as usize)
+        .register("cb_channel_buffer", POOLS_SIZE, channel_size / 4)
         .await;
     encode_pools
-        .register("encoded_frame_buffer", 1, (width * height * 4) as usize)
+        .register("encoded_frame_buffer", POOLS_SIZE, frame_size)
         .await;
 
     register!(
@@ -217,9 +229,8 @@ async fn register_encoding_pipelines(config: Configuration, pipelines: &mut Pipe
                         build_encoder_options(config.encoder_options.clone())
                     ))
                     .append(time_start!("encode_transmission"))
-                    .append(CloneSwitch::new(pipelines.get_mut("decoding")))
-                    .append(encode_pools.get("encoded_frame_buffer").redeemer())
             )
+            .link(Component::singleton(senders::local(&mut encode_pools, pipelines)))
     );
 }
 

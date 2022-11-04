@@ -10,7 +10,7 @@ pub(crate) struct CommandLineArgs {
     pub config_file_path: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct Configuration {
     pub video_file_path: String,
     pub width: u32,
