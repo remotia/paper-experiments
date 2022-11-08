@@ -11,6 +11,20 @@ use crate::{time_diff, time_start};
 
 pub use self::local_receiver as local;
 pub use self::srt_receiver as srt;
+pub use self::generic_receiver as generic;
+
+pub fn generic_receiver<T: FrameProcessor + Send + 'static>(
+    pools: &mut PoolRegistry,
+    receive_processor: T,
+) -> impl FrameProcessor {
+    Sequential::new()
+        .append(time_start!("receive_idle"))
+        .append(pools.get("encoded_frame_buffer").borrower())
+        .append(time_diff!("receive_idle"))
+        .append(time_start!("receive_processing"))
+        .append(receive_processor)
+        .append(time_diff!("receive_processing"))
+}
 
 pub async fn srt_receiver(pools: &mut PoolRegistry) -> impl FrameProcessor {
     Sequential::new()
@@ -21,6 +35,7 @@ pub async fn srt_receiver(pools: &mut PoolRegistry) -> impl FrameProcessor {
         .append(SRTFrameReceiver::new("127.0.0.1:5001", Duration::from_millis(50)).await)
         .append(time_diff!("receive_processing"))
 }
+
 /*
     Copy the encoded frame buffer to a buffer owned by the
     decoding pipeline to simulate the reception
@@ -48,6 +63,6 @@ pub fn local_receiver(pools: &mut PoolRegistry) -> impl FrameProcessor {
 
             frame_data.insert_writable_buffer("encoded_frame_buffer", owned_buffer);
 
-            Some(frame_data) 
+            Some(frame_data)
         }))
 }
