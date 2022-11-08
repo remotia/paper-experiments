@@ -55,8 +55,15 @@ async fn main() -> std::io::Result<()> {
         .feedable()
     );
 
-    let sender_handle = SRTFrameSender::new(5001, Duration::from_millis(50));
-    let receiver_handle = SRTFrameReceiver::new("127.0.0.1:5001", Duration::from_millis(50));
+    let port = config.transmission.server_port;
+    let latency = config.transmission.latency;
+    let address = format!(
+        "{}:{}",
+        config.transmission.server_address, config.transmission.server_port
+    );
+
+    let sender_handle = SRTFrameSender::new(port, Duration::from_millis(latency));
+    let receiver_handle = SRTFrameReceiver::new(&address, Duration::from_millis(latency));
 
     let (sender, receiver) = tokio::join!(sender_handle, receiver_handle);
 

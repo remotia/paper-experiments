@@ -15,7 +15,15 @@ pub struct Configuration {
     pub video_file_path: String,
     pub width: u32,
     pub height: u32,
-    pub encoder_options: HashMap<String, String> 
+    pub encoder_options: HashMap<String, String>,
+    pub transmission: TransmissionConfiguration
+}
+
+#[derive(Deserialize, Clone)]
+pub struct TransmissionConfiguration {
+    pub server_address: String,
+    pub server_port: u16,
+    pub latency: u64,
 }
 
 pub fn load_config() -> Configuration {
