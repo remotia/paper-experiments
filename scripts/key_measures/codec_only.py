@@ -20,6 +20,7 @@ for folder_path in os.listdir(root_folder):
 
         delay_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/stats/delay.csv")
         row.append(delay_stats['frame_delay'].mean())
+        row.append(delay_stats['drop_reason'].notnull().sum() / delay_stats['capture_timestamp'].count())
 
         # processing_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/stats/processing.csv")
         # row.append(processing_stats['capture_processing_time'].mean())
@@ -42,6 +43,7 @@ df_summary = pandas.DataFrame(summary, columns = [
     "crf", 
     "encoded_size", 
     "frame_delay", 
+    "drop_rate",
     # "capture_processing_time",
     # "yuv420p_conversion_processing_time",
     # "encode_processing_time",
