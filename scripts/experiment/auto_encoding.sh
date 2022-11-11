@@ -1,5 +1,5 @@
-EXECUTABLE=$1
-CONFIGURATION=$2
+EXECUTABLE=target/release/examples/auto_encoding
+CONFIGURATION=$1
 
 rm -rf results/
 
