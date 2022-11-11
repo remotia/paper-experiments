@@ -145,7 +145,7 @@ async fn register_decoding_pipelines<T: FrameProcessor + Send + 'static>(
                     .append(time_diff!("decode_transmission"))
                     .append(delay_controller(
                         "frame_delay",
-                        10000,
+                        config.transmission.max_frame_delay as u128,
                         pipelines.get_mut("decode_error")
                     ))
                     .append(CloneSwitch::new(pipelines.get_mut("rendered_dump")))
@@ -272,6 +272,7 @@ fn logger() -> impl FrameProcessor {
                 .log("capture_processing_time")
                 .log("yuv420p_conversion_processing_time")
                 .log("encode_processing_time")
+                .log("send_processing_time")
                 .log("decode_processing_time")
                 .log("rgba_conversion_processing_time"),
         )
@@ -281,6 +282,7 @@ fn logger() -> impl FrameProcessor {
                 .log("capture_timestamp")
                 .log("yuv420p_conversion_delay")
                 .log("encode_delay")
+                .log("send_delay")
                 .log("decode_delay")
                 .log("rgba_conversion_delay")
                 .log("frame_delay"),

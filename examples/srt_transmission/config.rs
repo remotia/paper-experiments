@@ -24,6 +24,7 @@ pub struct TransmissionConfiguration {
     pub server_address: String,
     pub server_port: u16,
     pub latency: u64,
+    pub max_frame_delay: u64,
 }
 
 pub fn load_config() -> Configuration {
