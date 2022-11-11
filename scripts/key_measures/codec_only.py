@@ -50,13 +50,13 @@ max_values = stats.max()
 min_values = stats.min()
 
 def calculate_min_score(row, stat_id, importance):
-    value = min_values[stat_id] / row[stat_id]
+    value = min(min_values[stat_id] / row[stat_id], 1.0)
     row[f"{stat_id}_score"] = value * importance
     row.drop(stat_id, inplace=True)
     return value
 
 def calculate_max_score(row, stat_id, importance):
-    value = row[stat_id] / max_values[stat_id]
+    value = min(row[stat_id] / max_values[stat_id], 1.0)
     row[f"{stat_id}_score"] = value * importance
     row.drop(stat_id, inplace=True)
     return value
@@ -76,6 +76,7 @@ directory = sys.argv[2]
 shutil.rmtree(directory, ignore_errors=True)
 os.makedirs(directory)
 
+stats = stats.round(2)
 stats.to_csv(f"{directory}/stats.csv")
 
 metrics_scores = stats.apply(calculate_metrics_scores, axis = 1)
