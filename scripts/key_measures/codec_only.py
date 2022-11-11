@@ -1,3 +1,5 @@
+import shutil
+import statistics
 import toml
 import os
 import sys
@@ -5,7 +7,7 @@ import pandas
 
 root_folder = sys.argv[1]
 
-summary = list()
+stats = list()
 
 for folder_path in os.listdir(root_folder):
     try:
@@ -22,38 +24,64 @@ for folder_path in os.listdir(root_folder):
         row.append(delay_stats['frame_delay'].mean())
         row.append(delay_stats['drop_reason'].notnull().sum() / delay_stats['capture_timestamp'].count())
 
-        # processing_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/stats/processing.csv")
-        # row.append(processing_stats['capture_processing_time'].mean())
-        # row.append(processing_stats['yuv420p_conversion_processing_time'].mean())
-        # row.append(processing_stats['encode_processing_time'].mean())
-        # row.append(processing_stats['decode_processing_time'].mean())
-        # row.append(processing_stats['rgba_conversion_processing_time'].mean())
-
         vmaf_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/vmaf.csv")
         row.append(vmaf_stats['psnr_hvs'].mean())
         row.append(vmaf_stats['float_ssim'].mean())
         row.append(vmaf_stats['vmaf'].mean())
 
-        summary.append(row)
+        stats.append(row)
     except Exception as e:
         print(f"Unable to read {folder_path}: {e}")
 
-df_summary = pandas.DataFrame(summary, columns = [
+stats = pandas.DataFrame(stats, columns = [
     "video_path", 
     "crf", 
     "encoded_size", 
     "frame_delay", 
     "drop_rate",
-    # "capture_processing_time",
-    # "yuv420p_conversion_processing_time",
-    # "encode_processing_time",
-    # "decode_processing_time",
-    # "rgba_conversion_processing_time"
     "psnr_hvs",
     "float_ssim",
     "vmaf"
 ])
 
-by_crf_summary = df_summary.groupby("crf").mean()
-by_crf_summary.to_csv(sys.argv[2])
-print(by_crf_summary)
+stats = stats.groupby("crf").mean(numeric_only=True)
+
+max_values = stats.max()
+min_values = stats.min()
+
+def calculate_min_score(row, stat_id, importance):
+    value = min_values[stat_id] / row[stat_id]
+    row[f"{stat_id}_score"] = value * importance
+    row.drop(stat_id, inplace=True)
+    return value
+
+def calculate_max_score(row, stat_id, importance):
+    value = row[stat_id] / max_values[stat_id]
+    row[f"{stat_id}_score"] = value * importance
+    row.drop(stat_id, inplace=True)
+    return value
+
+def calculate_metrics_scores(row):
+    calculate_min_score(row, "encoded_size", 0.5)
+    calculate_min_score(row, "frame_delay", 1.5)
+    calculate_min_score(row, "drop_rate", 0.5)
+
+    calculate_max_score(row, "psnr_hvs", 1.0)
+    calculate_max_score(row, "float_ssim", 1.0)
+    calculate_max_score(row, "vmaf", 1.5)
+
+    return row
+
+directory = sys.argv[2]
+shutil.rmtree(directory, ignore_errors=True)
+os.makedirs(directory)
+
+stats.to_csv(f"{directory}/stats.csv")
+
+metrics_scores = stats.apply(calculate_metrics_scores, axis = 1)
+metrics_scores.to_csv(f"{directory}/metrics_scores.csv")
+
+summary = stats
+summary["score"] = metrics_scores.mean(axis=1)
+summary.to_csv(f"{directory}/summary.csv")
+print(summary)
