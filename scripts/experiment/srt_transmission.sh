@@ -1,4 +1,4 @@
-EXECUTABLE=target/release/examples/srt_transmission
+EXECUTABLE=bin/srt_transmission
 CONFIGURATION=$1
 
 rm -rf results/
