@@ -51,7 +51,7 @@ fn main() -> Result<()> {
         // .arg("--enable-libass")
         // .arg("--enable-libfdk-aac")
         // .arg("--enable-libfreetype")
-        .arg("--enable-libmp3lame")
+        // .arg("--enable-libmp3lame")
         // .arg("--enable-libopus")
         // .arg("--enable-libvorbis")
         // .arg("--enable-libvpx")

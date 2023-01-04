@@ -15,7 +15,7 @@ pub struct Configuration {
     pub video_file_path: String,
     pub width: u32,
     pub height: u32,
-    pub extraction_tick: u32,
+    pub extraction_tick: u64,
     pub encoder_options: HashMap<String, String> 
 }
 

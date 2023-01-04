@@ -12,6 +12,11 @@ lto = true
 version = "1.14.0"
 features = ["rt-multi-thread"]
 
+[dependencies.remotia]
+git = "https://github.com/remotia/remotia"
+branch = "rework_tweaks"
+features = ["capturers", "buffer_utils", "renderers", "profilation_utils", "codecs", "loggers"]
+
 [dependencies]
 async-trait = "0.1.57"
 scrap = "0.5.0"
@@ -24,17 +29,12 @@ serde = "1.0.137"
 rayon = "1.5.3"
 itertools = "0.10.5"
 
-# remotia = { git = "https://github.com/remotia/remotia", branch = "develop" }
-# remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "master" }
-# remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "master" }
+remotia-ffmpeg-codecs = { git = "https://github.com/remotia/remotia-ffmpeg-codecs", branch = "rework" }
+remotia-srt = { git = "https://github.com/remotia/remotia-srt", branch = "rework" }
+yuv_utils = { git = "https://github.com/aegroto/yuv_utils", branch = "master" }
 
-remotia-ffmpeg-codecs = { path = "../remotia-ffmpeg-codecs/" }
-remotia-srt = { path = "../remotia-srt/" }
-yuv_utils = { path = "../../yuv_utils" }
+# remotia-ffmpeg-codecs = { path = "../remotia-ffmpeg-codecs/" }
+# remotia-srt = { path = "../remotia-srt/" }
+# yuv_utils = { path = "../../yuv_utils" }
 
 clap = { version = "4.0.15", features = ["derive"] }
-
-[dependencies.remotia]
-path = "../remotia/"
-features = ["capturers", "buffer_utils", "renderers", "profilation_utils", "codecs", "loggers"]
-
