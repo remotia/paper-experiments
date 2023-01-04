@@ -207,7 +207,7 @@ async fn register_encoding_pipelines(config: Configuration, pipelines: &mut Pipe
         AscodePipeline::new()
             .link(
                 Component::new()
-                    .append(Ticker::new(33))
+                    .append(Ticker::new(configuration.extraction_tick))
                     .append(capturers::y4m_capturer(&mut encode_pools, (width, height), video_path))
                     .append(capture_stopper)
                     .append(time_start!("capture_transmission"))

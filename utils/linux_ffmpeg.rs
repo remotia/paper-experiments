@@ -54,7 +54,7 @@ fn main() -> Result<()> {
         .arg("--enable-libmp3lame")
         // .arg("--enable-libopus")
         // .arg("--enable-libvorbis")
-        .arg("--enable-libvpx")
+        // .arg("--enable-libvpx")
         .arg("--enable-libx264")
         .arg("--enable-libx265")
         .arg("--disable-programs")
