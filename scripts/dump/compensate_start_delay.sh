@@ -9,10 +9,11 @@ do
 
     if [ ! -f "$RENDERED_FOLDER/$filename" ];
     then
-        OUTFILE="$RENDERED_FOLDER/$filename"
+        file_id="${filename%.*}"
+        OUTFILE="$RENDERED_FOLDER/$file_id.rgba"
         WIDTH=$(identify -format '%w' $file)
         HEIGHT=$(identify -format '%h' $file)
-        echo "Compensating (${WIDTH}x${HEIGHT})..."
+        echo "Compensating $OUTFILE..."
         convert -size ${WIDTH}x${HEIGHT} xc:black "$OUTFILE"
     fi
 
