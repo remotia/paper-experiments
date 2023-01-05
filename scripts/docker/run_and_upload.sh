@@ -1,28 +1,30 @@
-DOCKER_ROOT=/home/remotia-experiments/
+DOCKER_ROOT=/home/paper-experiments/
 
 if [[ ! -v RCLONE_REMOTE ]]; then
     echo "RCLONE_REMOTE is not set"
     exit
 fi
 
-TYPE=$1
-CONFIGURATION=$2
+CONFIGURATION=$1
+
+# TODO: Add type parameter again
+# TODO: Remove scripts mount
+EXPERIMENT_ID=$(basename $CONFIGURATION)
 
 docker run -it \
     --cap-add=NET_ADMIN \
-    --mount type=bind,source="$(pwd)/bin/",target=$DOCKER_ROOT/bin \
-    --mount type=bind,source="$(pwd)/videos/",target=$DOCKER_ROOT/videos \
     --mount type=bind,source="$(pwd)/configurations/",target=$DOCKER_ROOT/configurations \
     --mount type=bind,source="$(pwd)/scripts/",target=$DOCKER_ROOT/scripts \
+    --mount type=bind,source="$(pwd)/videos/",target=$DOCKER_ROOT/videos \
     --mount type=bind,source="$(pwd)/docker_mounts/results/",target=$DOCKER_ROOT/results \
     --network experiments \
-    --name experiment_container \
-    --workdir "$DOCKER_ROOT" \
+    --name $EXPERIMENT_ID \
     --env CONFIGURATION=$CONFIGURATION \
-    --env WIDTH=$WIDTH \
-    --env HEIGHT=$HEIGHT \
     --entrypoint ./scripts/experiment/run_only/auto_encoding.sh \
-    remotia-experiments
+    remotia:auto_encoding 
 
-# rclone -P sync docker_mounts/results/ $RCLONE_REMOTE:/remotia-results/$CONFIGURATION
-docker rm experiment_container
+tar -cf results.tar docker_mounts/results/
+rclone -P sync results.tar $RCLONE_REMOTE:/remotia-results-raw/$EXPERIMENT_ID/results.tar
+rm results.tar
+
+docker rm $EXPERIMENT_ID
