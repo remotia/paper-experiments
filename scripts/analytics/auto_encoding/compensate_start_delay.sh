@@ -11,8 +11,6 @@ do
     then
         file_id="${filename%.*}"
         OUTFILE="$RENDERED_FOLDER/$file_id.rgba"
-        WIDTH=$(identify -format '%w' $file)
-        HEIGHT=$(identify -format '%h' $file)
         echo "Compensating $OUTFILE..."
         convert -size ${WIDTH}x${HEIGHT} xc:black "$OUTFILE"
     fi
