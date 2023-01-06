@@ -15,6 +15,13 @@ CONFIGURATION=$1
 
 EXPERIMENT_ID=$(basename $CONFIGURATION)
 
+docker rm results_remove
+docker run -it \
+    --mount type=bind,source="$(pwd)/results/",target=$DOCKER_ROOT/results \
+    --name results_remove \
+    --entrypoint rm \
+    remotia:auto_encoding_analytics -rf results/*
+
 rclone -P sync $RCLONE_REMOTE:/remotia-results-raw/$EXPERIMENT_ID/results.tar  .
 tar -xf results.tar 
 rm results.tar
@@ -36,5 +43,5 @@ docker rm $EXPERIMENT_ID
 
 cd $CURRENT_DIRECTORY
 mkdir -p aggregated/$EXPERIMENT_ID
-cp -r analytics_workbench/results/stats aggregated/$EXPERIMENT_ID/stats/
+cp -r analytics_workbench/results/stats aggregated/$EXPERIMENT_ID/
 cp analytics_workbench/results/vmaf.csv aggregated/$EXPERIMENT_ID/vmaf.csv
