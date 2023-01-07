@@ -23,8 +23,6 @@ docker run -it \
     remotia:auto_encoding_analytics -rf results/*
 
 rclone -P sync $RCLONE_REMOTE:/remotia-results-raw/$EXPERIMENT_ID/results.tar  .
-exit
-
 tar -xf results.tar 
 rm results.tar
 mv docker_mounts/results/ results/

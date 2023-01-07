@@ -17,14 +17,14 @@ for folder_path in os.listdir(root_folder):
         row.append(config['video_file_path'])
         row.append(config['encoder_options']['crf'])
 
-        codec_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/stats/codec.csv")
+        codec_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/codec.csv")
         row.append(codec_stats['encoded_size'].mean())
 
-        delay_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/stats/delay.csv")
+        delay_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/delay.csv")
         row.append(delay_stats['frame_delay'].mean())
         row.append(delay_stats['drop_reason'].notnull().sum() / delay_stats['capture_timestamp'].count())
 
-        vmaf_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/vmaf.csv")
+        vmaf_stats = pandas.read_csv(f"{root_folder}/{folder_path}/vmaf.csv")
         row.append(vmaf_stats['psnr_hvs'].mean())
         row.append(vmaf_stats['float_ssim'].mean())
         row.append(vmaf_stats['vmaf'].mean())
