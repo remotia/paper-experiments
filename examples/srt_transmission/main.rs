@@ -224,7 +224,7 @@ async fn register_encoding_pipelines<T: FrameProcessor + Send + 'static>(
         AscodePipeline::new()
             .link(
                 Component::new()
-                    .append(Ticker::new(33))
+                    .append(Ticker::new(config.extraction_tick))
                     .append(capturers::y4m_capturer(&mut encode_pools, (width, height), video_path))
                     .append(capture_stopper)
                     .append(time_start!("capture_transmission"))

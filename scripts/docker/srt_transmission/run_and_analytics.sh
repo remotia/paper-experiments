@@ -25,8 +25,8 @@ docker run -it \
     --network experiments \
     --name "$EXPERIMENT_ID" \
     --env CONFIGURATION=$CONFIGURATION \
-    --entrypoint ./scripts/experiment/run_only/auto_encoding.sh \
-    remotia:auto_encoding 
+    --entrypoint ./scripts/experiment/run_only/srt_transmission.sh \
+    remotia:srt_transmission
 
 # Analytics
 CURRENT_DIRECTORY=$(pwd)
