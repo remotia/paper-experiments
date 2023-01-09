@@ -7,7 +7,7 @@ import hashlib
 # Loading
 base_conf = toml.load(open(f"configurations/.base.toml", "r"))
 
-for video in os.listdir("videos/dota2/")[5:]:
+for video in os.listdir("videos/dota2/"):
     for crf in [15, 21, 26, 32, 36, 45]:
         conf = copy.deepcopy(base_conf)
 

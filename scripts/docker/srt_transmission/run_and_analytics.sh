@@ -19,12 +19,14 @@ docker rm "$EXPERIMENT_ID"
 docker run -it \
     --cap-add=NET_ADMIN \
     --mount type=bind,source="$(pwd)/configurations/",target=$DOCKER_ROOT/configurations \
+    --mount type=bind,source="$(pwd)/netem/",target=$DOCKER_ROOT/netem \
     --mount type=bind,source="$(pwd)/scripts/",target=$DOCKER_ROOT/scripts \
     --mount type=bind,source="$(pwd)/videos/",target=$DOCKER_ROOT/videos \
     --mount type=bind,source="$(pwd)/docker_mounts/results/",target=$DOCKER_ROOT/results \
     --network experiments \
     --name "$EXPERIMENT_ID" \
     --env CONFIGURATION=$CONFIGURATION \
+    --env NETEM_SETUP=$NETEM_SETUP \
     --entrypoint ./scripts/experiment/run_only/srt_transmission.sh \
     remotia:srt_transmission
 
