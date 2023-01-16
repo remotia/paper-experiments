@@ -1,8 +1,7 @@
 FOLDER=$1
 OUTPUT=$2
 PIX_FMT=$3
-
-CONTAINER=./results/videos/tmp.avi
+CONTAINER=$4
 
 # For some random reason encoding directly to y4m is utterly difficult
 ffmpeg -y \

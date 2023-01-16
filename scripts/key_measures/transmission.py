@@ -20,17 +20,25 @@ for folder_path in os.listdir(root_folder):
         row.append(config['transmission']['latency'])
         row.append(config['transmission']['max_frame_delay'])
 
-        delay_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/stats/delay.csv")
-        drop_rate = float(delay_stats['drop_reason'].notnull().sum() / 900)
-        if drop_rate > 0.25:
-            continue
+        processing_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/processing.csv")
 
+        delay_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/delay.csv")
+        frames_count = processing_stats["capture_timestamp"].count()
+        drop_rate = float(delay_stats['drop_reason'].notnull().sum() / frames_count)
+
+        if drop_rate > 0.25:
+            continue 
+
+        vmaf_stats = pandas.read_csv(f"{root_folder}/{folder_path}/vmaf.csv")
+        row.append(vmaf_stats['psnr_hvs'].mean())
+        row.append(vmaf_stats['float_ssim'].mean())
+        row.append(vmaf_stats['vmaf'].mean())
 
         rendered_frames_delay_stats = delay_stats.loc[delay_stats["drop_reason"].isna()]
-        if rendered_frames_delay_stats.empty:
-            continue
+        # if rendered_frames_delay_stats.empty:
+        #    continue
 
-        codec_stats = pandas.read_csv(f"{root_folder}/{folder_path}/results/stats/codec.csv")
+        codec_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/codec.csv")
         joint_stats = rendered_frames_delay_stats.merge(codec_stats, on="capture_timestamp") 
 
         row.append(joint_stats['encoded_size'].mean())
@@ -47,6 +55,9 @@ stats = pandas.DataFrame(stats, columns = [
     "crf", 
     "latency",
     "max_frame_delay",
+    "psnr_hvs",
+    "float_ssim",
+    "vmaf",
     "encoded_size",
     "drop_rate",
     "frame_delay", 
@@ -76,9 +87,13 @@ def calculate_max_score(row, stat_id, importance):
     return value
 
 def calculate_metrics_scores(row):
+    calculate_min_score(row, "encoded_size", 0.5)
     calculate_min_score(row, "frame_delay", 1.5)
     calculate_min_score(row, "drop_rate", 0.5)
-    calculate_min_score(row, "encoded_size", 0.5)
+
+    calculate_max_score(row, "psnr_hvs", 1.0)
+    calculate_max_score(row, "float_ssim", 1.0)
+    calculate_max_score(row, "vmaf", 1.5)
 
     return row
 
