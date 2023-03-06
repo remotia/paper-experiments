@@ -28,7 +28,7 @@ def metric_id_to_display_name(metric_id):
     return map_to_display_name(metric_id, {
         "capture": "Capture",
         "yuv420p_conversion": "YUV420P conversion",
-        "encode_processing": "Encoding",
-        "decode_processing": "Decoding",
+        "encode": "Encoding",
+        "decode": "Decoding",
         "rgba_conversion": "RGBA conversion",
     })

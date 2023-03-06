@@ -26,12 +26,16 @@ cd scripts/correlation_studies/
 #     ../../archive/games/borderlands2/setup_1/aggregated/ \
 #     ../../plots/correlation/processing_jitter/all.pdf
 
-python3 gamewise_processing_jitter.py \
-    ../../archive/games/dota2/setup_1/aggregated/ \
-    ../../archive/games/borderlands2/setup_1/aggregated/ \
-    ../../archive/games/dirt5/setup_1/aggregated/ \
-    ../../archive/games/companyofheroes2/setup_1/aggregated/ \
-    ../../plots/correlation/gamewise_processing_jitter.pdf
+# python3 gamewise_processing_jitter.py \
+#     ../../archive/games/dota2/setup_1/aggregated/ \
+#     ../../archive/games/borderlands2/setup_1/aggregated/ \
+#     ../../archive/games/dirt5/setup_1/aggregated/ \
+#     ../../archive/games/companyofheroes2/setup_1/aggregated/ \
+#     ../../plots/correlation/gamewise_processing_jitter.pdf
+
+python3 idle_times.py \
+    ../../archive/games/ \
+    ../../plots/correlation/idle_times.pdf
 
 # export NETEM_SETUP=setup_1
 # for file in configurations/borderlands2/*
