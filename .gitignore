@@ -5,3 +5,5 @@ tmp/
 
 results/
 analytics_workbench/
+
+**/__pycache__/
