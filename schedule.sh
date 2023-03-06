@@ -33,9 +33,13 @@ cd scripts/correlation_studies/
 #     ../../archive/games/companyofheroes2/setup_1/aggregated/ \
 #     ../../plots/correlation/gamewise_processing_jitter.pdf
 
-python3 idle_times.py \
-    ../../archive/games/ \
-    ../../plots/correlation/idle_times.pdf
+# python3 idle_times.py \
+#     ../../archive/games/ \
+#     ../../plots/correlation/idle_times.pdf
+
+python3 delay_times.py \
+    ../../archive/games/borderlands2/setup_1/ \
+    ../../plots/correlation/delay_times.pdf
 
 # export NETEM_SETUP=setup_1
 # for file in configurations/borderlands2/*
