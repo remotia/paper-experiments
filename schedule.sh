@@ -37,9 +37,9 @@ cd scripts/correlation_studies/
 #     ../../archive/games/ \
 #     ../../plots/correlation/idle_times.pdf
 
-python3 delay_times.py \
-    ../../archive/games/borderlands2/setup_1/ \
-    ../../plots/correlation/delay_times.pdf
+python3 transmission_times.py \
+    ../../archive/games/ \
+    ../../plots/correlation/transmission_times.pdf
 
 # export NETEM_SETUP=setup_1
 # for file in configurations/borderlands2/*
