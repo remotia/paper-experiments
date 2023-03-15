@@ -5,49 +5,50 @@ import os
 import sys
 import pandas
 
-root_folder = sys.argv[1]
+root_folders = sys.argv[1:-1]
 
 stats = list()
 
-for folder_path in os.listdir(root_folder):
-    try:
-        row = list()
+for root_folder in root_folders:
+    for folder_path in os.listdir(root_folder):
+        try:
+            row = list()
 
-        config = toml.load(open(f"{root_folder}/{folder_path}/{folder_path}"))
-        row.append(folder_path)
-        row.append(config['video_file_path'])
-        row.append(config['encoder_options']['crf'])
-        row.append(config['transmission']['latency'])
-        row.append(config['transmission']['max_frame_delay'])
+            config = toml.load(open(f"{root_folder}/{folder_path}/{folder_path}"))
+            row.append(folder_path)
+            row.append(config['video_file_path'])
+            row.append(config['encoder_options']['crf'])
+            row.append(config['transmission']['latency'])
+            row.append(config['transmission']['max_frame_delay'])
 
-        processing_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/processing.csv")
+            processing_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/processing.csv")
 
-        delay_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/delay.csv")
-        frames_count = processing_stats["capture_timestamp"].count()
-        drop_rate = float(delay_stats['drop_reason'].notnull().sum() / frames_count)
+            delay_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/delay.csv")
+            frames_count = processing_stats["capture_timestamp"].count()
+            drop_rate = float(delay_stats['drop_reason'].notnull().sum() / frames_count)
 
-        if drop_rate > 0.25:
-            continue 
+            if drop_rate > 0.25:
+                continue 
 
-        vmaf_stats = pandas.read_csv(f"{root_folder}/{folder_path}/vmaf.csv")
-        row.append(vmaf_stats['psnr_hvs'].mean())
-        row.append(vmaf_stats['float_ssim'].mean())
-        row.append(vmaf_stats['vmaf'].mean())
+            vmaf_stats = pandas.read_csv(f"{root_folder}/{folder_path}/vmaf.csv")
+            row.append(vmaf_stats['psnr_hvs'].mean())
+            row.append(vmaf_stats['float_ssim'].mean())
+            row.append(vmaf_stats['vmaf'].mean())
 
-        rendered_frames_delay_stats = delay_stats.loc[delay_stats["drop_reason"].isna()]
-        # if rendered_frames_delay_stats.empty:
-        #    continue
+            rendered_frames_delay_stats = delay_stats.loc[delay_stats["drop_reason"].isna()]
+            # if rendered_frames_delay_stats.empty:
+            #    continue
 
-        codec_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/codec.csv")
-        joint_stats = rendered_frames_delay_stats.merge(codec_stats, on="capture_timestamp") 
+            codec_stats = pandas.read_csv(f"{root_folder}/{folder_path}/stats/codec.csv")
+            joint_stats = rendered_frames_delay_stats.merge(codec_stats, on="capture_timestamp") 
 
-        row.append(joint_stats['encoded_size'].mean())
-        row.append(drop_rate)
-        row.append(joint_stats['frame_delay'].mean())
+            row.append(joint_stats['encoded_size'].mean())
+            row.append(drop_rate)
+            row.append(joint_stats['frame_delay'].mean())
 
-        stats.append(row)
-    except Exception as e:
-        print(f"Unable to read {folder_path}: {e}")
+            stats.append(row)
+        except Exception as e:
+            print(f"Unable to read {folder_path}: {e}")
 
 stats = pandas.DataFrame(stats, columns = [
     "folder_path",
@@ -63,7 +64,7 @@ stats = pandas.DataFrame(stats, columns = [
     "frame_delay", 
 ])
 
-directory = sys.argv[2]
+directory = sys.argv[-1]
 shutil.rmtree(directory, ignore_errors=True)
 os.makedirs(directory)
 

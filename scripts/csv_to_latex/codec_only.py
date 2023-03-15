@@ -2,22 +2,26 @@ import csv
 import sys
 
 file = csv.reader(open(sys.argv[1], "r"))
-first = True
-for line in file:
-    if first:
-        first = False
-        continue
+columns = next(file)
+
+
+max_lines = 5
+for _ in range(0, max_lines):
+    line = next(file)
+
+    def value(key):
+        return line[columns.index(key)]
 
     elements = list()
 
-    elements.append(line[0]) # crf
-    elements.append(f"{float(line[1])/1024:.2f} KiB") # encoded_size
-    elements.append(f"{float(line[2]):.2f}ms") # frame_delay
-    elements.append(f"\\textasciitilde{int(float(line[3]) * 100.0)}\%") # drop_rate
-    elements.append(f"{float(line[4]):.2f}dB") # psnr_hvs
-    elements.append(f"{float(line[5]):.2f}") # ssim
-    elements.append(f"{float(line[6]):.2f}") # vmaf
-    elements.append(f"{float(line[7]):.2f}") # score
+    elements.append(value('crf'))
+    elements.append(f"{value('latency')}ms")
+    elements.append(f"{value('max_frame_delay')}ms")
+
+    elements.append(f"{float(value('psnr_hvs')):.2f} dB")
+    elements.append(f"{float(value('float_ssim')):.2f}")
+    elements.append(f"{float(value('vmaf')):.2f}")
+    elements.append(f"{float(value('score')):.2f}")
         
     formatted_line = " & ".join(elements) + " \\\\"
     print(formatted_line)
